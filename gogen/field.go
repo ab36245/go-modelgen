@@ -7,47 +7,45 @@ import (
 
 	"github.com/ab36245/go-modelgen/defx"
 	"github.com/ab36245/go-modelgen/writer"
-
-	"github.com/ab36245/go-modelgen/gogen/types"
 )
 
-func newField(w writer.GenWriter, d defx.Field) *fieldGen {
-	typ := types.New(w, d.Type, 0)
-	return &fieldGen{
-		GenWriter: w,
-		goName:    strcase.ToPascal(d.Name),
-		name:      d.Name,
-		typ:       typ,
+func newField(d defx.Field) Field {
+	return Field{
+		Name: strcase.ToPascal(d.Name),
+		Orig: d.Name,
+		Type: newType(d.Type, 0),
 	}
 }
 
-type fieldGen struct {
-	writer.GenWriter
-	goName string
-	name   string
-	typ    types.Gen
+type Field struct {
+	Name string
+	Orig string
+	Type *Type
 }
 
-func (g *fieldGen) String() string {
-	return fmt.Sprintf("%s %s", g.goName, g.typ)
+func (f Field) doStruct(w writer.GenWriter) {
+	w.Put("%s %s", f.Name, f.Type.Name)
 }
 
-func (g *fieldGen) doDecode() {
-	g.Put("// %s", g.name)
-	g.Inc("{")
+func (f Field) doDecode(w writer.GenWriter) {
+	w.Put("// %s", f.Name)
+	w.Inc("{")
 	{
-		v := g.typ.Decode(g.name, "v")
-		g.Put("m.%s = %s", g.goName, v)
+		source := f.Orig
+		target := "v"
+		target = f.Type.doDecode(w, source, target)
+		w.Put("m.%s = %s", f.Name, target)
 	}
-	g.Dec("}")
+	w.Dec("}")
 }
 
-func (g *fieldGen) doEncode() {
-	g.Put("// %s", g.name)
-	g.Inc("{")
+func (f Field) doEncode(w writer.GenWriter) {
+	w.Put("// %s", f.Name)
+	w.Inc("{")
 	{
-		n := fmt.Sprintf("m.%s", g.goName)
-		g.typ.Encode(n, g.name)
+		source := fmt.Sprintf("m.%s", f.Name)
+		target := f.Orig
+		f.Type.doEncode(w, source, target)
 	}
-	g.Dec("}")
+	w.Dec("}")
 }
