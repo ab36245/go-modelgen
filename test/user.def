@@ -1,0 +1,16 @@
+1 Transaction {
+   account: ref
+   amount: int
+   //date: time
+   description: string
+ }
+ 2 User {
+    email: string 
+    age: int
+    firstName: string
+    lastName: string
+    aliases: []string
+    map: [string]int
+    t: Transaction
+    listOfLists: [][]int
+ }

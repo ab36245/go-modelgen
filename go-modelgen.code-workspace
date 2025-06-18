@@ -1,0 +1,19 @@
+{
+    "folders": [
+        {
+            "path": "."
+        },
+        {
+            "path": "../go-runner"
+        },
+        {
+            "path": "../go-source"
+        },
+        {
+            "path": "../go-strcase"
+        },
+        {
+            "path": "../go-writer"
+        },
+    ],
+}
