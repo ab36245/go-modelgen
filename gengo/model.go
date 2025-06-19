@@ -1,4 +1,4 @@
-package gogen
+package gengo
 
 import (
 	"github.com/ab36245/go-modelgen/defx"

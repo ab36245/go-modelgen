@@ -1,4 +1,4 @@
-package gogen
+package gengo
 
 func doMap[A, B any](as []A, f func(A) B) []B {
 	var bs []B

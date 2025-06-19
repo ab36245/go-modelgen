@@ -1,4 +1,4 @@
-package gogen
+package gengo
 
 type Opts struct {
 	Reformat bool
