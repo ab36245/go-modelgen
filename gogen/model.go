@@ -52,20 +52,20 @@ func (m Model) doEncode(w writer.GenWriter) {
 	w.Dec("},")
 }
 
+func (m Model) doString(w writer.GenWriter) {
+	w.Inc("func (m %s) String() string {", m.Name)
+	{
+		w.Put("return model.String(m)")
+	}
+	w.Dec("}")
+}
+
 func (m Model) doStruct(w writer.GenWriter) {
 	w.Inc("type %s struct {", m.Name)
 	{
 		for _, f := range m.Fields {
 			f.doStruct(w)
 		}
-	}
-	w.Dec("}")
-}
-
-func (m Model) doString(w writer.GenWriter) {
-	w.Inc("func (m %s) String() string {", m.Name)
-	{
-		w.Put("return writer.Value(m)")
 	}
 	w.Dec("}")
 }
