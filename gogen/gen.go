@@ -10,33 +10,30 @@ import (
 	"github.com/ab36245/go-modelgen/writer"
 )
 
-func Generate(ds []defx.Model, path string, opts Opts) error {
+func Generate(path string, ds []defx.Model, opts Opts) error {
 	dir := filepath.Join(path, "models")
-	fmt.Printf("Creating %s\n", dir)
 	if err := os.MkdirAll(dir, fs.ModePerm); err != nil {
 		return fmt.Errorf("can't create %s: %w", dir, err)
 	}
 	ms := doMap(ds, newModel)
-	if err := genModels(dir, ms); err != nil {
+	if err := genModels(dir, ms, opts); err != nil {
 		return err
 	}
-	if err := genMsgs(dir, ms); err != nil {
+	if err := genMsgs(dir, ms, opts); err != nil {
 		return err
 	}
 	return nil
 }
 
-func genModels(dir string, ms []Model) error {
+func genModels(dir string, ms []Model, opts Opts) error {
 	w := writer.WithPrefix("\t")
 	w.Put("// WARNING!")
 	w.Put("// This code was generated automatically.")
-	w.Put("")
 	w.Put("package models")
 	w.Put("")
 	w.Inc("import (")
 	{
 		w.Put("\"github.com/ab36245/go-model\"")
-		w.Put("\"github.com/ab36245/go-writer\"")
 	}
 	w.Dec(")")
 	for _, d := range ms {
@@ -47,18 +44,19 @@ func genModels(dir string, ms []Model) error {
 		w.Put("")
 		d.doCodec(w)
 	}
-	return genSave(dir, "models.go", w.Code())
+	return genSave(dir, "models.go", opts, w.Code())
 }
 
-func genMsgs(dir string, ms []Model) error {
+func genMsgs(dir string, ms []Model, opts Opts) error {
 	w := writer.WithPrefix("\t")
 	w.Put("// WARNING!")
 	w.Put("// This code was generated automatically.")
-	w.Put("")
 	w.Put("package models")
 	w.Put("")
 	w.Inc("import (")
 	{
+		w.Put("\"fmt\"")
+		w.Put("")
 		w.Put("\"github.com/ab36245/go-msgs\"")
 	}
 	w.Dec(")")
@@ -81,7 +79,7 @@ func genMsgs(dir string, ms []Model) error {
 		}
 		w.Inc("default:")
 		{
-			w.Put("return nil, fmt.Errorf(\"unknown model id %d\", d.Id()")
+			w.Put("return nil, fmt.Errorf(\"unknown model id %d\", d.Id())")
 		}
 		w.Dec("")
 		w.Put("}")
@@ -90,22 +88,20 @@ func genMsgs(dir string, ms []Model) error {
 	w.Put("")
 	w.Inc("func EncodeMsg(v any) ([]byte, error) {")
 	{
-		w.Put("e, err := msgs.Encoder()")
-		w.Inc("if err != nil {")
-		{
-			w.Put("return nil, err")
-		}
-		w.Dec("}")
+		w.Put("var err error")
+		w.Put("e := msgs.Encoder()")
 		w.Put("switch v := v.(type) {")
 		for _, m := range ms {
 			w.Inc("case %s:", m.Name)
 			{
-				w.Inc("if err := e.Id(%d); err != nil {", m.Id)
+				w.Put("err = e.Id(%d)", m.Id)
+				w.Inc("if err != nil {")
 				{
 					w.Put("return nil, err")
 				}
 				w.Dec("}")
-				w.Inc("if err := %sCodec.Encode(e, v); err != nil {", m.Name)
+				w.Put("err = %sCodec.Encode(e, v)", m.Name)
+				w.Inc("if err != nil {")
 				{
 					w.Put("return nil, err")
 				}
@@ -122,14 +118,17 @@ func genMsgs(dir string, ms []Model) error {
 		w.Put("return e.Bytes(), nil")
 	}
 	w.Dec("}")
-	return genSave(dir, "msgs.go", w.Code())
+	return genSave(dir, "msgs.go", opts, w.Code())
 }
 
-func genSave(dir string, name string, code string) error {
-	// code, err := format(code)
-	// if err != nil {
-	// 	return fmt.Errorf("can't reformat code: %w", err)
-	// }
+func genSave(dir string, name string, opts Opts, code string) error {
+	if opts.Reformat {
+		var err error
+		code, err = format(code)
+		if err != nil {
+			return fmt.Errorf("can't reformat code: %w", err)
+		}
+	}
 
 	file := filepath.Join(dir, name)
 	fmt.Printf("Creating %s\n", file)
