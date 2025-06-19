@@ -1,19 +1,32 @@
 {
     "folders": [
         {
+            "name": "go-modelgen",
             "path": "."
         },
         {
+            "name": "go-model",
+            "path": "../go-model"
+        },
+        {
+            "name": "go-msgs",
+            "path": "../go-msgs"
+        },
+        {
+            "name": "go-runner",
             "path": "../go-runner"
         },
         {
+            "name": "go-source",
             "path": "../go-source"
         },
         {
+            "name": "go-strcase",
             "path": "../go-strcase"
         },
         {
+            "name": "go-writer",
             "path": "../go-writer"
-        },
+        }
     ],
 }
