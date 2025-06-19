@@ -5,6 +5,14 @@
             "path": "."
         },
         {
+            "name": "flutter_model",
+            "path": "../flutter_model"
+        },
+        {
+            "name": "flutter_msgs",
+            "path": "../flutter_msgs"
+        },
+        {
             "name": "go-model",
             "path": "../go-model"
         },
