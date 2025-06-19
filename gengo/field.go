@@ -23,7 +23,7 @@ type Field struct {
 	Type *Type
 }
 
-func (f Field) doStruct(w writer.GenWriter) {
+func (f Field) doDeclaration(w writer.GenWriter) {
 	w.Put("%s %s", f.Name, f.Type.Name)
 }
 

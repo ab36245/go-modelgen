@@ -22,13 +22,13 @@ type Model struct {
 func (m Model) doCodec(w writer.GenWriter) {
 	w.Inc("var %sCodec = model.Codec[%s]{", m.Name, m.Name)
 	{
-		m.doDecode(w)
-		m.doEncode(w)
+		m.doCodecDecode(w)
+		m.doCodecEncode(w)
 	}
 	w.Dec("}")
 }
 
-func (m Model) doDecode(w writer.GenWriter) {
+func (m Model) doCodecDecode(w writer.GenWriter) {
 	w.Inc("Decode: func(d model.ObjectDecoder) (%s, error) {", m.Name)
 	{
 		w.Put("m := %s{}", m.Name)
@@ -40,7 +40,7 @@ func (m Model) doDecode(w writer.GenWriter) {
 	w.Dec("},")
 }
 
-func (m Model) doEncode(w writer.GenWriter) {
+func (m Model) doCodecEncode(w writer.GenWriter) {
 	w.Inc("Encode: func(e model.ObjectEncoder, m %s) error {", m.Name)
 	{
 		w.Put("var err error")
@@ -64,7 +64,7 @@ func (m Model) doStruct(w writer.GenWriter) {
 	w.Inc("type %s struct {", m.Name)
 	{
 		for _, f := range m.Fields {
-			f.doStruct(w)
+			f.doDeclaration(w)
 		}
 	}
 	w.Dec("}")
