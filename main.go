@@ -36,6 +36,11 @@ func main() {
 				Binding:     cli.StringSlice().Bind(&dartPaths),
 			},
 			&cli.Option{
+				Name:        "go-format",
+				Description: "Reformat the generated code with gofmt",
+				Binding:     cli.BoolFlag().Bind(&goOpts.Reformat),
+			},
+			&cli.Option{
 				Name:        "go-path",
 				Description: "Output path for go code",
 				Short:       "g",
@@ -115,6 +120,6 @@ func run(cmd *cli.Command, args []string) {
 	}
 
 	for _, goPath := range goPaths {
-		gogen.Generate(allDefs, goPath, goOpts)
+		gogen.Generate(goPath, allDefs, goOpts)
 	}
 }
