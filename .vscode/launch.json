@@ -11,7 +11,7 @@
             "mode": "auto",
             "program": "${workspaceFolder}",
             "args": [
-                // "--dart-path=/tmp/go-modelgen/dart",
+                "--dart-path=${workspaceFolder}/../test_model/app/lib",
                 "--go-path=${workspaceFolder}/../test_model/server",
                 "${workspaceFolder}/../test_model/shared",
             ]

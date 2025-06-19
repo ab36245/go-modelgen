@@ -10,8 +10,8 @@ import (
 
 	"github.com/ab36245/go-cli"
 
-	"github.com/ab36245/go-modelgen/dartgen"
 	"github.com/ab36245/go-modelgen/defx"
+	"github.com/ab36245/go-modelgen/gendart"
 	"github.com/ab36245/go-modelgen/gengo"
 	"github.com/ab36245/go-modelgen/parser"
 )
@@ -19,7 +19,7 @@ import (
 const defExtension = ".def"
 
 var dartPaths []string
-var dartOpts dartgen.Opts
+var dartOpts gendart.Opts
 
 var goPaths []string
 var goOpts gengo.Opts
@@ -116,7 +116,7 @@ func run(cmd *cli.Command, args []string) {
 	}
 
 	for _, dartPath := range dartPaths {
-		dartgen.Generate(allDefs, dartPath, dartOpts)
+		gendart.Generate(dartPath, allDefs, dartOpts)
 	}
 
 	for _, goPath := range goPaths {
