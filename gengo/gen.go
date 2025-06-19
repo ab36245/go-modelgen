@@ -36,6 +36,9 @@ func genModels(dir string, ms []Model, opts Opts) error {
 		w.Put("\"github.com/ab36245/go-model\"")
 	}
 	w.Dec(")")
+	w.Put("")
+	w.Put("// For convenience")
+	w.Put("type Ref = model.Ref")
 	for _, d := range ms {
 		w.Put("")
 		d.doStruct(w)
