@@ -128,16 +128,15 @@ func (t *Type) doEncode(w writer.GenWriter, source, target string) {
 		encoder += fmt.Sprintf("%d", t.Level-1)
 	}
 	method := func(kind string, source string) string {
+		var args string
 		if target != "" && source != "" {
-			return fmt.Sprintf("Put%s(%q, %s)", kind, target, source)
+			args = fmt.Sprintf("%q, %s", target, source)
+		} else if target != "" {
+			args = fmt.Sprintf("%q", target)
+		} else {
+			args = fmt.Sprintf("%s", source)
 		}
-		if target != "" {
-			return fmt.Sprintf("Put%s(%q)", kind, target)
-		}
-		if source != "" {
-			return fmt.Sprintf("Put%s(%s)", kind, source)
-		}
-		return fmt.Sprintf("Put%s()", kind)
+		return fmt.Sprintf("Put%s(%s)", kind, args)
 	}
 
 	switch t.Kind {
@@ -202,6 +201,11 @@ func (t *Type) doEncode(w writer.GenWriter, source, target string) {
 
 	case defx.StringType:
 		m := method("String", source)
+		w.Put("err = %s.%s", encoder, m)
+		doEncodeError(w)
+
+	case defx.TimeType:
+		m := method("Time", source)
 		w.Put("err = %s.%s", encoder, m)
 		doEncodeError(w)
 	}
