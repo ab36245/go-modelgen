@@ -12,8 +12,8 @@
             "program": "${workspaceFolder}",
             "args": [
                 // "--dart-path=/tmp/go-modelgen/dart",
-                "--go-path=/tmp/go-modelgen/go",
-                "./test"
+                "--go-path=${workspaceFolder}/../test_model/server",
+                "${workspaceFolder}/../test_model/shared",
             ]
         }
     ]
