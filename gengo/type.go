@@ -123,17 +123,28 @@ func (t *Type) doDecode(w writer.GenWriter, source, target string) string {
 }
 
 func (t *Type) doEncode(w writer.GenWriter, source, target string) {
-	if target != "" {
-		target = fmt.Sprintf("%q, ", target)
-	}
 	encoder := "e"
 	if t.Level > 0 {
 		encoder += fmt.Sprintf("%d", t.Level-1)
 	}
+	method := func(kind string, source string) string {
+		if target != "" && source != "" {
+			return fmt.Sprintf("Put%s(%q, %s)", kind, target, source)
+		}
+		if target != "" {
+			return fmt.Sprintf("Put%s(%q)", kind, target)
+		}
+		if source != "" {
+			return fmt.Sprintf("Put%s(%s)", kind, source)
+		}
+		return fmt.Sprintf("Put%s()", kind)
+	}
+
 	switch t.Kind {
 	case defx.ArrayType:
 		e := fmt.Sprintf("e%d", t.Level)
-		w.Put("%s, err = %s.PutArray(%slen(%s))", e, encoder, target, source)
+		m := method("Array", fmt.Sprintf("len(%s)", source))
+		w.Put("%s, err := %s.%s", e, encoder, m)
 		doEncodeError(w)
 		v := fmt.Sprintf("v%d", t.Level)
 		w.Inc("for _, %s := range %s {", v, source)
@@ -143,24 +154,29 @@ func (t *Type) doEncode(w writer.GenWriter, source, target string) {
 		w.Dec("}")
 
 	case defx.BoolType:
-		w.Put("err = %s.PutBool(%s%s)", encoder, target, source)
+		m := method("Bool", source)
+		w.Put("err = %s.%s", encoder, m)
 		doEncodeError(w)
 
 	case defx.BytesType:
-		w.Put("err = %s.PutBytes(%s%s)", encoder, target, source)
+		m := method("Bytes", source)
+		w.Put("err = %s.%s", encoder, m)
 		doEncodeError(w)
 
 	case defx.FloatType:
-		w.Put("err = %s.PutFloat(%s%s)", encoder, target, source)
+		m := method("Float", source)
+		w.Put("err = %s.%s", encoder, m)
 		doEncodeError(w)
 
 	case defx.IntType:
-		w.Put("err = %s.PutInt(%s%s)", encoder, target, source)
+		m := method("Int", source)
+		w.Put("err = %s.%s", encoder, m)
 		doEncodeError(w)
 
 	case defx.MapType:
 		e := fmt.Sprintf("e%d", t.Level)
-		w.Put("%s, err = %s.PutMap(%slen(%s))", e, encoder, target, source)
+		m := method("Map", fmt.Sprintf("len(%s)", source))
+		w.Put("%s, err := %s.%s", e, encoder, m)
 		doEncodeError(w)
 		k := fmt.Sprintf("k%d", t.Level)
 		v := fmt.Sprintf("v%d", t.Level)
@@ -173,17 +189,20 @@ func (t *Type) doEncode(w writer.GenWriter, source, target string) {
 
 	case defx.ModelType:
 		e := fmt.Sprintf("e%d", t.Level)
-		w.Put("%s, err = %s.PutObject(%s)", e, encoder, target)
+		m := method("Object", "")
+		w.Put("%s, err := %s.%s", e, encoder, m)
 		doEncodeError(w)
 		w.Put("err = %sCodec.Encode(%s, %s)", t.Name, e, source)
 		doEncodeError(w)
 
 	case defx.RefType:
-		w.Put("err = %s.PutRef(%s%s)", encoder, target, source)
+		m := method("Ref", source)
+		w.Put("err = %s.%s", encoder, m)
 		doEncodeError(w)
 
 	case defx.StringType:
-		w.Put("err = %s.PutString(%s%s)", encoder, target, source)
+		m := method("String", source)
+		w.Put("err = %s.%s", encoder, m)
 		doEncodeError(w)
 	}
 }
