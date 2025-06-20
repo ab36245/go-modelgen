@@ -216,7 +216,7 @@ func (t *Type) doEncode(w writer.GenWriter, source, target string) {
 		w.Put("%s.%s;", encoder, m)
 
 	case defx.TimeType:
-		m := method("String", source)
+		m := method("Time", source)
 		w.Put("%s.%s;", encoder, m)
 	}
 }
