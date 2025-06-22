@@ -33,13 +33,17 @@ func (m Model) doClass(w writer.GenWriter) {
 }
 
 func (m Model) doClassConstructor(w writer.GenWriter) {
-	w.Inc("const %s({", m.Name)
-	{
-		for _, f := range m.Fields {
-			f.doClassConstructor(w)
+	if len(m.Fields) == 0 {
+		w.Inc("const %s();", m.Name)
+	} else {
+		w.Inc("const %s({", m.Name)
+		{
+			for _, f := range m.Fields {
+				f.doClassConstructor(w)
+			}
 		}
+		w.Dec("});")
 	}
-	w.Dec("});")
 }
 
 func (m Model) doClassDeclarations(w writer.GenWriter) {
