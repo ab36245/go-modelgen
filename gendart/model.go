@@ -23,49 +23,44 @@ type Model struct {
 func (m Model) doClass(w writer.GenWriter) {
 	w.Inc("class %s {", m.Name)
 	{
-		m.doClassDeclarations(w)
-		w.Put("")
-		m.doClassConstructor(w)
-		w.Put("")
-		m.doClassToString(w)
+		if len(m.Fields) == 0 {
+			w.Put("const %s();", m.Name)
+			w.Put("")
+			w.Put("@override")
+			w.Inc("String toString() =>")
+			{
+				w.Put("'%s';", m.Name)
+			}
+			w.Dec("")
+		} else {
+			for _, f := range m.Fields {
+				f.doClassDeclaration(w)
+			}
+			w.Put("")
+			w.Inc("const %s({", m.Name)
+			{
+				for _, f := range m.Fields {
+					f.doClassConstructor(w)
+				}
+			}
+			w.Dec("});")
+			w.Put("")
+			w.Put("@override")
+			w.Inc("String toString() =>")
+			{
+				w.Inc("ObjectWriter('%s')", m.Name)
+				{
+					for _, f := range m.Fields {
+						w.Put(".field('%s', %s)", f.Name, f.Name)
+					}
+					w.Put(".toString();")
+				}
+				w.Dec("")
+			}
+			w.Dec("")
+		}
 	}
 	w.Dec("}")
-}
-
-func (m Model) doClassConstructor(w writer.GenWriter) {
-	if len(m.Fields) == 0 {
-		w.Inc("const %s();", m.Name)
-	} else {
-		w.Inc("const %s({", m.Name)
-		{
-			for _, f := range m.Fields {
-				f.doClassConstructor(w)
-			}
-		}
-		w.Dec("});")
-	}
-}
-
-func (m Model) doClassDeclarations(w writer.GenWriter) {
-	for _, f := range m.Fields {
-		f.doClassDeclaration(w)
-	}
-}
-
-func (m Model) doClassToString(w writer.GenWriter) {
-	w.Put("@override")
-	w.Inc("String toString() =>")
-	{
-		w.Inc("ObjectWriter('%s')", m.Name)
-		{
-			for _, f := range m.Fields {
-				w.Put(".field('%s', %s)", f.Name, f.Name)
-			}
-			w.Put(".toString();")
-		}
-		w.Dec("")
-	}
-	w.Dec("")
 }
 
 func (m Model) doCodec(w writer.GenWriter) {
