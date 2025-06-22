@@ -214,7 +214,7 @@ func (t *Type) doEncode(w writer.GenWriter, source, target string) {
 func doDecodeError(w writer.GenWriter) {
 	w.Inc("if err != nil {")
 	{
-		w.Put("return m, nil")
+		w.Put("return m, err")
 	}
 	w.Dec("}")
 }
@@ -222,7 +222,7 @@ func doDecodeError(w writer.GenWriter) {
 func doEncodeError(w writer.GenWriter) {
 	w.Inc("if err != nil {")
 	{
-		w.Put("return nil")
+		w.Put("return err")
 	}
 	w.Dec("}")
 }
