@@ -44,6 +44,8 @@ func (m Model) doCodecEncode(w writer.GenWriter) {
 	w.Inc("Encode: func(e model.ObjectEncoder, m %s) error {", m.Name)
 	{
 		w.Put("var err error")
+		w.Put("// Horrible hack to avoid unused variable error")
+		w.Put("_ = err")
 		for _, f := range m.Fields {
 			f.doEncode(w)
 		}
