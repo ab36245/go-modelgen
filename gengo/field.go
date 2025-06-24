@@ -49,3 +49,26 @@ func (f Field) doEncode(w writer.GenWriter) {
 	}
 	w.Dec("}")
 }
+
+func (f Field) doDbDecode(w writer.GenWriter) {
+	w.Put("// %s", f.Name)
+	w.Inc("{")
+	{
+		source := f.Orig
+		target := "v"
+		target = f.Type.doDecode(w, source, target)
+		w.Put("m.%s = %s", f.Name, target)
+	}
+	w.Dec("}")
+}
+
+func (f Field) doDbEncode(w writer.GenWriter) {
+	w.Put("// %s", f.Name)
+	w.Inc("{")
+	{
+		source := fmt.Sprintf("m.%s", f.Name)
+		target := f.Orig
+		f.Type.doEncode(w, source, target)
+	}
+	w.Dec("}")
+}

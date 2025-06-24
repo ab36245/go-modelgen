@@ -48,6 +48,10 @@ type Type struct {
 	Sub   *Type
 }
 
+func (t *Type) varName(base string) string {
+	return fmt.Sprintf("%s%d", base, t.Level)
+}
+
 func (t *Type) doDecode(w writer.GenWriter, source, target string) string {
 	if source != "" {
 		source = fmt.Sprintf("%q", source)

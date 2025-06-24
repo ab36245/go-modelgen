@@ -11,9 +11,9 @@
             "mode": "auto",
             "program": "${workspaceFolder}",
             "args": [
-                "--dart-path=${workspaceFolder}/../test_model/app/lib",
-                "--go-path=${workspaceFolder}/../test_model/server",
-                "${workspaceFolder}/../test_model/shared",
+                // "--dart-path=${workspaceFolder}/../test_model/app/lib",
+                "--go-path=${workspaceFolder}/../fin/server",
+                "${workspaceFolder}/../fin/shared",
             ]
         }
     ]

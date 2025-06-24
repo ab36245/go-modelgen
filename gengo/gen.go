@@ -24,6 +24,12 @@ func Generate(path string, ds []defx.Model, opts Opts) error {
 	if err := genMsgs(dir, ms, opts); err != nil {
 		return err
 	}
+	if err := genDb(dir, ms, opts); err != nil {
+		return err
+	}
+	if err := genMp(dir, ms, opts); err != nil {
+		return err
+	}
 	return nil
 }
 
