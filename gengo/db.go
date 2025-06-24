@@ -176,6 +176,16 @@ func dbDecodeType(w writer.GenWriter, t *Type, source, target string) string {
 			w.Put("return m, fmt.Errorf(\"invalid %s\")", dbType)
 		}
 		w.Dec("}")
+
+	case defs.TimeType:
+		dbType := "bson.DateTime"
+		w.Put("var %s %s", d, dbType)
+		w.Inc("if %s, ok = %s.(%s); !ok {", d, source, dbType)
+		{
+			w.Put("return m, fmt.Errorf(\"invalid %s\")", dbType)
+		}
+		w.Dec("}")
+		w.Put("%s := %s.Time()", v, d)
 	}
 	return v
 }
@@ -248,6 +258,10 @@ func dbEncodeType(w writer.GenWriter, t *Type, source, target string) string {
 			w.Put("return nil, err")
 		}
 		w.Dec("}")
+		return v
+
+	case defs.TimeType:
+		w.Put("%s := bson.NewDateTimeFromTime(%s)", v, source)
 		return v
 
 	case defs.StringType:

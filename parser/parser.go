@@ -117,15 +117,18 @@ func (p *Parser) parseField() (defs.Field, error) {
 }
 
 func (p *Parser) parseType() (*defs.Type, error) {
-	if !p.token.IsChar('[') {
-		return p.parseSimpleType()
-	}
-	p.next()
-	if p.token.IsChar(']') {
+	if p.token.IsChar('[') {
 		p.next()
-		return p.parseArrayType()
+		if p.token.IsChar(']') {
+			p.next()
+			return p.parseArrayType()
+		}
+		return p.parseMapType()
 	}
-	return p.parseMapType()
+	if p.token.IsChar('?') {
+		return p.parseOptionType()
+	}
+	return p.parseSimpleType()
 }
 
 func (p *Parser) parseSimpleType() (*defs.Type, error) {
@@ -190,6 +193,18 @@ func (p *Parser) parseMapType() (*defs.Type, error) {
 	}
 	typ.Sub = sub
 
+	return typ, nil
+}
+
+func (p *Parser) parseOptionType() (*defs.Type, error) {
+	typ := &defs.Type{
+		Kind: defs.OptionType,
+	}
+	sub, err := p.parseType()
+	if err != nil {
+		return nil, err
+	}
+	typ.Sub = sub
 	return typ, nil
 }
 

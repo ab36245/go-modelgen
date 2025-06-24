@@ -25,6 +25,8 @@ func (t *Type) String() string {
 		return "int"
 	case MapType:
 		return fmt.Sprintf("[%s]%s", t.Key, t.Sub)
+	case OptionType:
+		return fmt.Sprintf("?%s", t.Sub)
 	case ModelType:
 		return fmt.Sprintf("model %s", t.Name)
 	case StringType:
@@ -46,6 +48,7 @@ const (
 	IntType
 	MapType
 	ModelType
+	OptionType
 	RefType
 	StringType
 	TimeType

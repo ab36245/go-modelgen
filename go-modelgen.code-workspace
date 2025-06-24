@@ -13,6 +13,10 @@
             "path": "../flutter_msgs"
         },
         {
+            "name": "go-db",
+            "path": "../go-db"
+        },
+        {
             "name": "go-model",
             "path": "../go-model"
         },

@@ -30,6 +30,9 @@ func newType(d *defs.Type, level int) *Type {
 		t.Name = fmt.Sprintf("map[%s]%s", t.Key.Name, t.Sub.Name)
 	case defs.ModelType:
 		t.Name = d.Name
+	case defs.OptionType:
+		t.Sub = newType(d.Sub, level+1)
+		t.Name = fmt.Sprintf("model.Option[%s]", t.Sub.Name)
 	case defs.RefType:
 		t.Name = "model.Ref"
 	case defs.StringType:

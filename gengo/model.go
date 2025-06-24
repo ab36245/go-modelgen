@@ -19,31 +19,6 @@ type Model struct {
 	Name   string
 }
 
-func (m Model) doDb(w writer.GenWriter) {
-	w.Inc("var %sDbCodec = db.Codec[%s]{", m.Name, m.Name)
-	{
-		w.Inc("Decode: func(d db.M) (%s, error) {", m.Name)
-		{
-			w.Put("m := %s{}", m.Name)
-			for _, f := range m.Fields {
-				f.doDbDecode(w)
-			}
-			w.Put("return m, nil")
-		}
-		w.Dec("},")
-		w.Inc("Encode: func(m %s) (db.M, error) {", m.Name)
-		{
-			w.Put("d := make(db.M, %d)", len(m.Fields))
-			for _, f := range m.Fields {
-				f.doDbEncode(w)
-			}
-			w.Put("return d, nil")
-		}
-		w.Dec("},")
-	}
-	w.Dec("}")
-}
-
 func (m Model) doCodec(w writer.GenWriter) {
 	w.Inc("var %sCodec = model.Codec[%s]{", m.Name, m.Name)
 	{
