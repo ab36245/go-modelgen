@@ -10,7 +10,7 @@ import (
 
 	"github.com/ab36245/go-cli"
 
-	"github.com/ab36245/go-modelgen/defx"
+	"github.com/ab36245/go-modelgen/defs"
 	"github.com/ab36245/go-modelgen/gendart"
 	"github.com/ab36245/go-modelgen/gengo"
 	"github.com/ab36245/go-modelgen/parser"
@@ -95,7 +95,7 @@ func run(cmd *cli.Command, args []string) {
 		os.Exit(0)
 	}
 
-	allDefs := []defx.Model{}
+	allDefs := []defs.Model{}
 	for _, file := range files {
 		fmt.Printf("Loading %s\n", file)
 		parser, err := parser.NewParser(file)

@@ -1,7 +1,7 @@
 package gengo
 
 import (
-	"github.com/ab36245/go-modelgen/defx"
+	"github.com/ab36245/go-modelgen/defs"
 	"github.com/ab36245/go-modelgen/writer"
 )
 
@@ -17,7 +17,7 @@ func genMp(dir string, ms []Model, opts Opts) error {
 	loop:
 		for _, m := range ms {
 			for _, f := range m.Fields {
-				if f.Type.Kind == defx.TimeType {
+				if f.Type.Kind == defs.TimeType {
 					needTime = true
 					break loop
 				}

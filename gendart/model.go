@@ -1,12 +1,12 @@
 package gendart
 
 import (
-	"github.com/ab36245/go-modelgen/defx"
+	"github.com/ab36245/go-modelgen/defs"
 	"github.com/ab36245/go-modelgen/writer"
 	"github.com/ab36245/go-strcase"
 )
 
-func newModel(d defx.Model) Model {
+func newModel(d defs.Model) Model {
 	return Model{
 		Fields: doMap(d.Fields, newField),
 		Id:     d.Id,

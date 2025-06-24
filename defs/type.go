@@ -1,4 +1,4 @@
-package defx
+package defs
 
 import (
 	"fmt"

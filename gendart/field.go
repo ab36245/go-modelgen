@@ -3,11 +3,11 @@ package gendart
 import (
 	"fmt"
 
-	"github.com/ab36245/go-modelgen/defx"
+	"github.com/ab36245/go-modelgen/defs"
 	"github.com/ab36245/go-modelgen/writer"
 )
 
-func newField(d defx.Field) Field {
+func newField(d defs.Field) Field {
 	return Field{
 		Name: d.Name,
 		Orig: d.Name,

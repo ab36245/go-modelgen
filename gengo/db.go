@@ -3,7 +3,7 @@ package gengo
 import (
 	"fmt"
 
-	"github.com/ab36245/go-modelgen/defx"
+	"github.com/ab36245/go-modelgen/defs"
 	"github.com/ab36245/go-modelgen/writer"
 )
 
@@ -68,7 +68,7 @@ func dbDecodeType(w writer.GenWriter, t *Type, source, target string) string {
 	d := t.varName("d")
 	v := t.varName(target)
 	switch t.Kind {
-	case defx.ArrayType:
+	case defs.ArrayType:
 		dbType := "bson.A"
 		w.Put("var %s %s", d, dbType)
 		w.Inc("if %s, ok = %s.(%s); !ok {", d, source, dbType)
@@ -86,7 +86,7 @@ func dbDecodeType(w writer.GenWriter, t *Type, source, target string) string {
 		}
 		w.Dec("}")
 
-	case defx.BoolType:
+	case defs.BoolType:
 		dbType := "bool"
 		w.Put("var %s %s", v, dbType)
 		w.Inc("if %s, ok = %s.(%s); !ok {", v, source, dbType)
@@ -95,7 +95,7 @@ func dbDecodeType(w writer.GenWriter, t *Type, source, target string) string {
 		}
 		w.Dec("}")
 
-	case defx.BytesType:
+	case defs.BytesType:
 		dbType := "[]byte"
 		w.Put("var %s %s", v, dbType)
 		w.Inc("if %s, ok = %s.(%s); !ok {", v, source, dbType)
@@ -104,7 +104,7 @@ func dbDecodeType(w writer.GenWriter, t *Type, source, target string) string {
 		}
 		w.Dec("}")
 
-	case defx.FloatType:
+	case defs.FloatType:
 		dbType := "float64"
 		w.Put("var %s %s", v, dbType)
 		w.Inc("if %s, ok = %s.(%s); !ok {", v, source, dbType)
@@ -113,7 +113,7 @@ func dbDecodeType(w writer.GenWriter, t *Type, source, target string) string {
 		}
 		w.Dec("}")
 
-	case defx.IntType:
+	case defs.IntType:
 		dbType := "int32"
 		w.Put("var %s %s", d, dbType)
 		w.Inc("if %s, ok = %s.(%s); !ok {", d, source, dbType)
@@ -123,7 +123,7 @@ func dbDecodeType(w writer.GenWriter, t *Type, source, target string) string {
 		w.Dec("}")
 		w.Put("%s := int(%s)", v, d)
 
-	case defx.MapType:
+	case defs.MapType:
 		dbType := "bson.M"
 		w.Put("var %s %s", d, dbType)
 		w.Inc("if %s, ok = %s.(%s); !ok {", d, source, dbType)
@@ -142,7 +142,7 @@ func dbDecodeType(w writer.GenWriter, t *Type, source, target string) string {
 		}
 		w.Dec("}")
 
-	case defx.ModelType:
+	case defs.ModelType:
 		dbType := "bson.M"
 		w.Put("var %s %s", d, dbType)
 		w.Inc("if %s, ok = %s.(%s); !ok {", d, source, dbType)
@@ -158,7 +158,7 @@ func dbDecodeType(w writer.GenWriter, t *Type, source, target string) string {
 		}
 		w.Dec("}")
 
-	case defx.RefType:
+	case defs.RefType:
 		dbType := "bson.ObjectID"
 		w.Put("var %s %s", d, dbType)
 		w.Inc("if %s, ok = %s.(%s); !ok {", d, source, dbType)
@@ -168,7 +168,7 @@ func dbDecodeType(w writer.GenWriter, t *Type, source, target string) string {
 		w.Dec("}")
 		w.Put("%s := model.Ref(%s.Hex())", v, d)
 
-	case defx.StringType:
+	case defs.StringType:
 		dbType := "string"
 		w.Put("var %s %s", v, dbType)
 		w.Inc("if %s, ok = %s.(%s); !ok {", v, source, dbType)
@@ -207,7 +207,7 @@ func dbEncodeField(w writer.GenWriter, f Field) {
 func dbEncodeType(w writer.GenWriter, t *Type, source, target string) string {
 	v := t.varName(target)
 	switch t.Kind {
-	case defx.ArrayType:
+	case defs.ArrayType:
 		dbType := "bson.A"
 		w.Put("%s := make(%s, len(%s))", v, dbType, source)
 		i := t.varName("i")
@@ -220,20 +220,20 @@ func dbEncodeType(w writer.GenWriter, t *Type, source, target string) string {
 		w.Dec("}")
 		return v
 
-	case defx.BoolType:
+	case defs.BoolType:
 		return source
 
-	case defx.BytesType:
+	case defs.BytesType:
 		return source
 
-	case defx.FloatType:
+	case defs.FloatType:
 		return source
 
-	case defx.IntType:
+	case defs.IntType:
 		w.Put("%s := int32(%s)", v, source)
 		return v
 
-	case defx.ModelType:
+	case defs.ModelType:
 		w.Put("%s, err := %sDbCodec.Encode(%s)", v, t.Name, source)
 		w.Inc("if err != nil {")
 		{
@@ -241,7 +241,7 @@ func dbEncodeType(w writer.GenWriter, t *Type, source, target string) string {
 		}
 		w.Dec("}")
 
-	case defx.RefType:
+	case defs.RefType:
 		w.Put("%s, err := bson.ObjectIDFromHex(string(%s))", v, source)
 		w.Inc("if err != nil {")
 		{
@@ -250,7 +250,7 @@ func dbEncodeType(w writer.GenWriter, t *Type, source, target string) string {
 		w.Dec("}")
 		return v
 
-	case defx.StringType:
+	case defs.StringType:
 		return source
 	}
 	return v

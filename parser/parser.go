@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/ab36245/go-modelgen/defx"
+	"github.com/ab36245/go-modelgen/defs"
 	"github.com/ab36245/go-source/buffer"
 )
 
@@ -30,13 +30,13 @@ type Parser struct {
 	token  Token
 }
 
-func (p *Parser) Parse() ([]defx.Model, error) {
+func (p *Parser) Parse() ([]defs.Model, error) {
 	p.next()
 	return p.parseModels()
 }
 
-func (p *Parser) parseModels() ([]defx.Model, error) {
-	var models []defx.Model
+func (p *Parser) parseModels() ([]defs.Model, error) {
+	var models []defs.Model
 	for !p.token.IsEOF() {
 		model, err := p.parseModel()
 		if err != nil {
@@ -47,8 +47,8 @@ func (p *Parser) parseModels() ([]defx.Model, error) {
 	return models, nil
 }
 
-func (p *Parser) parseModel() (defx.Model, error) {
-	model := defx.Model{}
+func (p *Parser) parseModel() (defs.Model, error) {
+	model := defs.Model{}
 
 	if !p.token.Is(tkInt) {
 		return model, p.expected("model id")
@@ -81,8 +81,8 @@ func (p *Parser) parseModel() (defx.Model, error) {
 	return model, nil
 }
 
-func (p *Parser) parseFields() ([]defx.Field, error) {
-	var fields []defx.Field
+func (p *Parser) parseFields() ([]defs.Field, error) {
+	var fields []defs.Field
 	for !p.token.IsChar('}') {
 		field, err := p.parseField()
 		if err != nil {
@@ -93,8 +93,8 @@ func (p *Parser) parseFields() ([]defx.Field, error) {
 	return fields, nil
 }
 
-func (p *Parser) parseField() (defx.Field, error) {
-	field := defx.Field{}
+func (p *Parser) parseField() (defs.Field, error) {
+	field := defs.Field{}
 
 	if !p.token.Is(tkName) {
 		return field, p.expected("field name")
@@ -116,7 +116,7 @@ func (p *Parser) parseField() (defx.Field, error) {
 	return field, nil
 }
 
-func (p *Parser) parseType() (*defx.Type, error) {
+func (p *Parser) parseType() (*defs.Type, error) {
 	if !p.token.IsChar('[') {
 		return p.parseSimpleType()
 	}
@@ -128,37 +128,37 @@ func (p *Parser) parseType() (*defx.Type, error) {
 	return p.parseMapType()
 }
 
-func (p *Parser) parseSimpleType() (*defx.Type, error) {
-	typ := &defx.Type{}
+func (p *Parser) parseSimpleType() (*defs.Type, error) {
+	typ := &defs.Type{}
 	if !p.token.Is(tkName) {
 		return typ, p.expected("type name")
 	}
 	switch p.token.text {
 	case "bool":
-		typ.Kind = defx.BoolType
+		typ.Kind = defs.BoolType
 	case "bytes":
-		typ.Kind = defx.BytesType
+		typ.Kind = defs.BytesType
 	case "float":
-		typ.Kind = defx.FloatType
+		typ.Kind = defs.FloatType
 	case "int":
-		typ.Kind = defx.IntType
+		typ.Kind = defs.IntType
 	case "ref":
-		typ.Kind = defx.RefType
+		typ.Kind = defs.RefType
 	case "string":
-		typ.Kind = defx.StringType
+		typ.Kind = defs.StringType
 	case "time":
-		typ.Kind = defx.TimeType
+		typ.Kind = defs.TimeType
 	default:
-		typ.Kind = defx.ModelType
+		typ.Kind = defs.ModelType
 		typ.Name = p.token.text
 	}
 	p.next()
 	return typ, nil
 }
 
-func (p *Parser) parseArrayType() (*defx.Type, error) {
-	typ := &defx.Type{
-		Kind: defx.ArrayType,
+func (p *Parser) parseArrayType() (*defs.Type, error) {
+	typ := &defs.Type{
+		Kind: defs.ArrayType,
 	}
 	sub, err := p.parseType()
 	if err != nil {
@@ -168,9 +168,9 @@ func (p *Parser) parseArrayType() (*defx.Type, error) {
 	return typ, nil
 }
 
-func (p *Parser) parseMapType() (*defx.Type, error) {
-	typ := &defx.Type{
-		Kind: defx.MapType,
+func (p *Parser) parseMapType() (*defs.Type, error) {
+	typ := &defs.Type{
+		Kind: defs.MapType,
 	}
 
 	key, err := p.parseSimpleType()

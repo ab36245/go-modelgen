@@ -3,46 +3,46 @@ package gendart
 import (
 	"fmt"
 
-	"github.com/ab36245/go-modelgen/defx"
+	"github.com/ab36245/go-modelgen/defs"
 	"github.com/ab36245/go-modelgen/writer"
 	"github.com/ab36245/go-strcase"
 )
 
-func newType(d *defx.Type, level int) *Type {
+func newType(d *defs.Type, level int) *Type {
 	t := &Type{
 		Kind:  d.Kind,
 		Level: level,
 	}
 	switch d.Kind {
-	case defx.ArrayType:
+	case defs.ArrayType:
 		t.Sub = newType(d.Sub, level+1)
 		t.Name = fmt.Sprintf("List<%s>", t.Sub.Name)
-	case defx.BoolType:
+	case defs.BoolType:
 		t.Name = "bool"
-	case defx.BytesType:
+	case defs.BytesType:
 		t.Name = "Uint8List"
-	case defx.FloatType:
+	case defs.FloatType:
 		t.Name = "double"
-	case defx.IntType:
+	case defs.IntType:
 		t.Name = "int"
-	case defx.MapType:
+	case defs.MapType:
 		t.Key = newType(d.Key, level+1)
 		t.Sub = newType(d.Sub, level+1)
 		t.Name = fmt.Sprintf("Map<%s, %s>", t.Key.Name, t.Sub.Name)
-	case defx.ModelType:
+	case defs.ModelType:
 		t.Name = d.Name
-	case defx.RefType:
+	case defs.RefType:
 		t.Name = "ModelRef"
-	case defx.StringType:
+	case defs.StringType:
 		t.Name = "String"
-	case defx.TimeType:
+	case defs.TimeType:
 		t.Name = "DateTime"
 	}
 	return t
 }
 
 type Type struct {
-	Kind  defx.TypeKind
+	Kind  defs.TypeKind
 	Name  string
 	Level int
 	Key   *Type
@@ -61,7 +61,7 @@ func (t *Type) doDecode(w writer.GenWriter, source, target string) string {
 		decoder += fmt.Sprintf("%d", t.Level-1)
 	}
 	switch t.Kind {
-	case defx.ArrayType:
+	case defs.ArrayType:
 		w.Put("final %s = <%s>[];", target, t.Sub.Name)
 		w.Inc("{")
 		{
@@ -77,19 +77,19 @@ func (t *Type) doDecode(w writer.GenWriter, source, target string) string {
 		}
 		w.Dec("}")
 
-	case defx.BoolType:
+	case defs.BoolType:
 		w.Put("final %s = %s.getBool(%s);", target, decoder, source)
 
-	case defx.BytesType:
+	case defs.BytesType:
 		w.Put("final %s = %s.getBytes(%s);", target, decoder, source)
 
-	case defx.FloatType:
+	case defs.FloatType:
 		w.Put("final %s = %s.getFloat(%s);", target, decoder, source)
 
-	case defx.IntType:
+	case defs.IntType:
 		w.Put("final %s = %s.getInt(%s);", target, decoder, source)
 
-	case defx.MapType:
+	case defs.MapType:
 		w.Put("final %s = <%s,%s>{};", target, t.Key.Name, t.Sub.Name)
 		w.Inc("{")
 		{
@@ -106,7 +106,7 @@ func (t *Type) doDecode(w writer.GenWriter, source, target string) string {
 		}
 		w.Dec("}")
 
-	case defx.ModelType:
+	case defs.ModelType:
 		w.Put("%s %s;", t.Name, target)
 		w.Inc("{")
 		{
@@ -117,13 +117,13 @@ func (t *Type) doDecode(w writer.GenWriter, source, target string) string {
 		}
 		w.Dec("}")
 
-	case defx.RefType:
+	case defs.RefType:
 		w.Put("final %s = %s.getRef(%s);", target, decoder, source)
 
-	case defx.StringType:
+	case defs.StringType:
 		w.Put("final %s = %s.getString(%s);", target, decoder, source)
 
-	case defx.TimeType:
+	case defs.TimeType:
 		w.Put("final %s = %s.getTime(%s);", target, decoder, source)
 	}
 	return target
@@ -147,7 +147,7 @@ func (t *Type) doEncode(w writer.GenWriter, source, target string) {
 	}
 
 	switch t.Kind {
-	case defx.ArrayType:
+	case defs.ArrayType:
 		w.Inc("{")
 		{
 			e := fmt.Sprintf("e%d", t.Level)
@@ -162,23 +162,23 @@ func (t *Type) doEncode(w writer.GenWriter, source, target string) {
 		}
 		w.Dec("}")
 
-	case defx.BoolType:
+	case defs.BoolType:
 		m := method("Int", source)
 		w.Put("%s.%s;", encoder, m)
 
-	case defx.BytesType:
+	case defs.BytesType:
 		m := method("Bytes", source)
 		w.Put("%s.%s;", encoder, m)
 
-	case defx.FloatType:
+	case defs.FloatType:
 		m := method("Float", source)
 		w.Put("%s.%s;", encoder, m)
 
-	case defx.IntType:
+	case defs.IntType:
 		m := method("Int", source)
 		w.Put("%s.%s;", encoder, m)
 
-	case defx.MapType:
+	case defs.MapType:
 		w.Inc("{")
 		{
 			e := fmt.Sprintf("e%d", t.Level)
@@ -196,7 +196,7 @@ func (t *Type) doEncode(w writer.GenWriter, source, target string) {
 		}
 		w.Dec("}")
 
-	case defx.ModelType:
+	case defs.ModelType:
 		w.Inc("{")
 		{
 			e := fmt.Sprintf("e%d", t.Level)
@@ -207,15 +207,15 @@ func (t *Type) doEncode(w writer.GenWriter, source, target string) {
 		}
 		w.Dec("}")
 
-	case defx.RefType:
+	case defs.RefType:
 		m := method("Ref", source)
 		w.Put("%s.%s;", encoder, m)
 
-	case defx.StringType:
+	case defs.StringType:
 		m := method("String", source)
 		w.Put("%s.%s;", encoder, m)
 
-	case defx.TimeType:
+	case defs.TimeType:
 		m := method("Time", source)
 		w.Put("%s.%s;", encoder, m)
 	}

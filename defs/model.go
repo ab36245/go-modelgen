@@ -1,4 +1,4 @@
-package defx
+package defs
 
 import (
 	"github.com/ab36245/go-writer"
