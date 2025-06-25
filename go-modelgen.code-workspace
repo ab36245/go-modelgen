@@ -9,6 +9,10 @@
             "path": "../flutter_model"
         },
         {
+            "name": "flutter_msgpack",
+            "path": "../flutter_msgpack"
+        },
+        {
             "name": "flutter_msgs",
             "path": "../flutter_msgs"
         },
@@ -21,8 +25,8 @@
             "path": "../go-model"
         },
         {
-            "name": "go-msgs",
-            "path": "../go-msgs"
+            "name": "go-msgpack",
+            "path": "../go-msgpack"
         },
         {
             "name": "go-runner",

@@ -126,6 +126,7 @@ func (p *Parser) parseType() (*defs.Type, error) {
 		return p.parseMapType()
 	}
 	if p.token.IsChar('?') {
+		p.next()
 		return p.parseOptionType()
 	}
 	return p.parseSimpleType()

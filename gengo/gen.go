@@ -5,6 +5,9 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
+
+	"github.com/ab36245/go-runner"
 
 	"github.com/ab36245/go-modelgen/defs"
 )
@@ -14,20 +17,14 @@ func Generate(path string, ds []defs.Model, opts Opts) error {
 	if err := os.MkdirAll(dir, fs.ModePerm); err != nil {
 		return fmt.Errorf("can't create %s: %w", dir, err)
 	}
-	ms := doMap(ds, newModel)
+	ms := newModels(ds)
 	if err := genModels(dir, ms, opts); err != nil {
 		return err
 	}
-	if err := genCodecs(dir, ms, opts); err != nil {
+	if err := genDbCodecs(dir, ms, opts); err != nil {
 		return err
 	}
-	if err := genMsgs(dir, ms, opts); err != nil {
-		return err
-	}
-	if err := genDb(dir, ms, opts); err != nil {
-		return err
-	}
-	if err := genMp(dir, ms, opts); err != nil {
+	if err := genMsgCodecs(dir, ms, opts); err != nil {
 		return err
 	}
 	return nil
@@ -36,7 +33,7 @@ func Generate(path string, ds []defs.Model, opts Opts) error {
 func genSave(dir string, name string, opts Opts, code string) error {
 	if opts.Reformat {
 		var err error
-		code, err = format(code)
+		code, err = genFormat(code)
 		if err != nil {
 			return fmt.Errorf("can't reformat code: %w", err)
 		}
@@ -48,4 +45,40 @@ func genSave(dir string, name string, opts Opts, code string) error {
 		return fmt.Errorf("can't create %s: %w", dir, err)
 	}
 	return nil
+}
+
+func genFormat(code string) (string, error) {
+	var output []byte
+	cmd := runner.New("gofmt")
+	cmd.Stdin(strings.NewReader(code))
+	cmd.Stdout(runner.CaptureOutput(&output))
+	err := cmd.Run()
+	if err != nil {
+		return "", nil
+	}
+	return string(output), nil
+}
+
+func genTypes(ms []Model) map[defs.TypeKind]bool {
+	set := make(map[defs.TypeKind]bool)
+
+	var check func(*Type)
+	check = func(t *Type) {
+		switch t.Kind {
+		case defs.ArrayType:
+			check(t.Sub)
+		case defs.MapType:
+			check(t.Key)
+			check(t.Sub)
+		default:
+			set[t.Kind] = true
+		}
+	}
+
+	for _, m := range ms {
+		for _, f := range m.Fields {
+			check(f.Type)
+		}
+	}
+	return set
 }

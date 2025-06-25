@@ -11,33 +11,52 @@ func genModels(dir string, ms []Model, opts Opts) error {
 	w.Put("// This code was generated automatically.")
 	w.Put("package models")
 	w.Put("")
-	w.Inc("import (")
-	{
-		needTime := false
-	loop:
-		for _, m := range ms {
-			for _, f := range m.Fields {
-				if f.Type.Kind == defs.TimeType {
-					needTime = true
-					break loop
-				}
-			}
-		}
-		if needTime {
-			w.Put("\"time\"")
-		}
-
-		w.Put("\"github.com/ab36245/go-model\"")
-	}
-	w.Dec(")")
+	modelImports(w, ms)
 	w.Put("")
 	w.Put("// For convenience")
 	w.Put("type Ref = model.Ref")
-	for _, d := range ms {
+	for _, m := range ms {
 		w.Put("")
-		d.doStruct(w)
+		modelStruct(w, m)
 		w.Put("")
-		d.doString(w)
+		modelMethods(w, m)
 	}
 	return genSave(dir, "models.go", opts, w.Code())
+}
+
+func modelImports(w writer.GenWriter, ms []Model) {
+	names := map[string]bool{
+		"github.com/ab36245/go-model": true,
+	}
+	types := genTypes(ms)
+	if types[defs.TimeType] {
+		names["time"] = true
+	}
+	if len(names) > 0 {
+		w.Inc("import (")
+		{
+			for name := range names {
+				w.Put("%q", name)
+			}
+		}
+		w.Dec(")")
+	}
+}
+
+func modelStruct(w writer.GenWriter, m Model) {
+	w.Inc("type %s struct {", m.Name)
+	{
+		for _, f := range m.Fields {
+			w.Put("%s %s", f.Name, f.Type.Name)
+		}
+	}
+	w.Dec("}")
+}
+
+func modelMethods(w writer.GenWriter, m Model) {
+	w.Inc("func (m %s) String() string {", m.Name)
+	{
+		w.Put("return model.String(m)")
+	}
+	w.Dec("}")
 }

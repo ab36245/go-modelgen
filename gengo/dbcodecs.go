@@ -7,27 +7,39 @@ import (
 	"github.com/ab36245/go-modelgen/writer"
 )
 
-func genDb(dir string, ms []Model, opts Opts) error {
+func genDbCodecs(dir string, ms []Model, opts Opts) error {
 	w := writer.WithPrefix("\t")
 	w.Put("// WARNING!")
 	w.Put("// This code was generated automatically.")
 	w.Put("package models")
 	w.Put("")
-	w.Inc("import (")
-	{
-		w.Put("\"fmt\"")
-		w.Put("")
-		w.Put("\"go.mongodb.org/mongo-driver/v2/bson\"")
-		w.Put("")
-		w.Put("\"github.com/ab36245/go-db\"")
-		w.Put("\"github.com/ab36245/go-model\"")
-	}
-	w.Dec(")")
+	dbImports(w, ms)
 	for _, m := range ms {
 		w.Put("")
 		dbModel(w, m)
 	}
-	return genSave(dir, "db.go", opts, w.Code())
+	return genSave(dir, "dbcodecs.go", opts, w.Code())
+}
+
+func dbImports(w writer.GenWriter, ms []Model) {
+	names := map[string]bool{
+		"fmt":                                 true,
+		"go.mongodb.org/mongo-driver/v2/bson": true,
+		"github.com/ab36245/go-db":            true,
+	}
+	types := genTypes(ms)
+	if types[defs.OptionType] || types[defs.RefType] {
+		names["github.com/ab36245/go-model"] = true
+	}
+	if len(names) > 0 {
+		w.Inc("import (")
+		{
+			for name := range names {
+				w.Put("%q", name)
+			}
+		}
+		w.Dec(")")
+	}
 }
 
 func dbModel(w writer.GenWriter, m Model) {
@@ -49,12 +61,15 @@ func dbDecodeModel(w writer.GenWriter, m Model) {
 				dbDecodeField(w, f)
 			}
 		}
+		w.Put("")
 		w.Put("return m, nil")
 	}
 	w.Dec("},")
 }
 
 func dbDecodeField(w writer.GenWriter, f Field) {
+	w.Put("")
+	w.Put("// %s", f.Name)
 	w.Inc("{")
 	{
 		source := fmt.Sprintf("d[%q]", f.Orig)
@@ -65,91 +80,58 @@ func dbDecodeField(w writer.GenWriter, f Field) {
 }
 
 func dbDecodeType(w writer.GenWriter, t *Type, source, target string) string {
-	d := t.varName("d")
-	v := t.varName(target)
-	switch t.Kind {
-	case defs.ArrayType:
-		dbType := "bson.A"
-		w.Put("var %s %s", d, dbType)
-		w.Inc("if %s, ok = %s.(%s); !ok {", d, source, dbType)
+	doGet := func(local, dbType string) {
+		w.Put("var %s %s", local, dbType)
+		w.Inc("if %s, ok = %s.(%s); !ok {", local, source, dbType)
 		{
 			w.Put("return m, fmt.Errorf(\"invalid %s\")", dbType)
 		}
 		w.Dec("}")
+	}
+
+	v := t.varName(target)
+	d := t.varName("d") // raw bson data
+	i := t.varName("i")
+	e := t.varName("e")
+	k := t.varName("k")
+
+	switch t.Kind {
+	case defs.ArrayType:
+		doGet(d, "bson.A")
 		w.Put("%s := make([]%s, len(%s))", v, t.Sub.Name, d)
-		i := t.varName("i")
-		e := t.varName("e")
 		w.Inc("for %s, %s := range %s {", i, e, d)
 		{
-			o := dbDecodeType(w, t.Sub, e, "v")
-			w.Put("%s[%s] = %s", v, i, o)
+			e := dbDecodeType(w, t.Sub, e, "v")
+			w.Put("%s[%s] = %s", v, i, e)
 		}
 		w.Dec("}")
 
 	case defs.BoolType:
-		dbType := "bool"
-		w.Put("var %s %s", v, dbType)
-		w.Inc("if %s, ok = %s.(%s); !ok {", v, source, dbType)
-		{
-			w.Put("return m, fmt.Errorf(\"invalid %s\")", dbType)
-		}
-		w.Dec("}")
+		doGet(v, "bool")
 
 	case defs.BytesType:
-		dbType := "[]byte"
-		w.Put("var %s %s", v, dbType)
-		w.Inc("if %s, ok = %s.(%s); !ok {", v, source, dbType)
-		{
-			w.Put("return m, fmt.Errorf(\"invalid %s\")", dbType)
-		}
-		w.Dec("}")
+		doGet(v, "[]byte")
 
 	case defs.FloatType:
-		dbType := "float64"
-		w.Put("var %s %s", v, dbType)
-		w.Inc("if %s, ok = %s.(%s); !ok {", v, source, dbType)
-		{
-			w.Put("return m, fmt.Errorf(\"invalid %s\")", dbType)
-		}
-		w.Dec("}")
+		doGet(v, "float64")
 
 	case defs.IntType:
-		dbType := "int32"
-		w.Put("var %s %s", d, dbType)
-		w.Inc("if %s, ok = %s.(%s); !ok {", d, source, dbType)
-		{
-			w.Put("return m, fmt.Errorf(\"invalid %s\")", dbType)
-		}
-		w.Dec("}")
+		doGet(d, "int32")
 		w.Put("%s := int(%s)", v, d)
 
 	case defs.MapType:
-		dbType := "bson.M"
-		w.Put("var %s %s", d, dbType)
-		w.Inc("if %s, ok = %s.(%s); !ok {", d, source, dbType)
-		{
-			w.Put("return m, fmt.Errorf(\"invalid %s\")", dbType)
-		}
-		w.Dec("}")
+		doGet(d, "bson.M")
 		w.Put("%s := make(map[%s]%s, len(%s))", v, t.Key.Name, t.Sub.Name, d)
-		k := t.varName("k")
-		e := t.varName("e")
 		w.Inc("for %s, %s := range %s {", k, e, d)
 		{
-			kn := dbDecodeType(w, t.Key, k, "k")
-			en := dbDecodeType(w, t.Sub, e, "e")
-			w.Put("%s[%s] = %s", v, kn, en)
+			k := dbDecodeType(w, t.Key, k, "k")
+			e := dbDecodeType(w, t.Sub, e, "e")
+			w.Put("%s[%s] = %s", v, k, e)
 		}
 		w.Dec("}")
 
 	case defs.ModelType:
-		dbType := "bson.M"
-		w.Put("var %s %s", d, dbType)
-		w.Inc("if %s, ok = %s.(%s); !ok {", d, source, dbType)
-		{
-			w.Put("return m, fmt.Errorf(\"invalid %s\")", dbType)
-		}
-		w.Dec("}")
+		doGet(d, "bson.M")
 		w.Put("var %s %s", v, t.Name)
 		w.Put("var err error")
 		w.Inc("if %s, err = %sDbCodec.Decode(%s); err != nil {", v, t.Name, d)
@@ -158,33 +140,29 @@ func dbDecodeType(w writer.GenWriter, t *Type, source, target string) string {
 		}
 		w.Dec("}")
 
-	case defs.RefType:
-		dbType := "bson.ObjectID"
-		w.Put("var %s %s", d, dbType)
-		w.Inc("if %s, ok = %s.(%s); !ok {", d, source, dbType)
+	case defs.OptionType:
+		w.Put("var %s model.Option[%s]", v, t.Sub.Name)
+		w.Inc("if %s == nil {", source)
 		{
-			w.Put("return m, fmt.Errorf(\"invalid %s\")", dbType)
+			w.Put("%s = model.EmptyOption[%s]()", v, t.Sub.Name)
+		}
+		w.Dec("")
+		w.Inc("} else {")
+		{
+			e := dbDecodeType(w, t.Sub, source, "e")
+			w.Put("%s = model.NewOption(%s)", v, e)
 		}
 		w.Dec("}")
+
+	case defs.RefType:
+		doGet(d, "bson.ObjectID")
 		w.Put("%s := model.Ref(%s.Hex())", v, d)
 
 	case defs.StringType:
-		dbType := "string"
-		w.Put("var %s %s", v, dbType)
-		w.Inc("if %s, ok = %s.(%s); !ok {", v, source, dbType)
-		{
-			w.Put("return m, fmt.Errorf(\"invalid %s\")", dbType)
-		}
-		w.Dec("}")
+		doGet(v, "string")
 
 	case defs.TimeType:
-		dbType := "bson.DateTime"
-		w.Put("var %s %s", d, dbType)
-		w.Inc("if %s, ok = %s.(%s); !ok {", d, source, dbType)
-		{
-			w.Put("return m, fmt.Errorf(\"invalid %s\")", dbType)
-		}
-		w.Dec("}")
+		doGet(d, "bson.DateTime")
 		w.Put("%s := %s.Time()", v, d)
 	}
 	return v
@@ -199,12 +177,15 @@ func dbEncodeModel(w writer.GenWriter, m Model) {
 				dbEncodeField(w, f)
 			}
 		}
+		w.Put("")
 		w.Put("return e, nil")
 	}
 	w.Dec("},")
 }
 
 func dbEncodeField(w writer.GenWriter, f Field) {
+	w.Put("")
+	w.Put("// %s", f.Name)
 	w.Inc("{")
 	{
 		source := fmt.Sprintf("m.%s", f.Name)
@@ -240,7 +221,20 @@ func dbEncodeType(w writer.GenWriter, t *Type, source, target string) string {
 		return source
 
 	case defs.IntType:
-		w.Put("%s := int32(%s)", v, source)
+		return fmt.Sprintf("int32(%s)", source)
+
+	case defs.MapType:
+		dbType := "bson.M"
+		w.Put("%s := make(%s, len(%s))", v, dbType, source)
+		k := t.varName("k")
+		e := t.varName("e")
+		w.Inc("for %s, %s := range %s {", k, e, source)
+		{
+			k := dbEncodeType(w, t.Key, k, "k")
+			e := dbEncodeType(w, t.Sub, e, "e")
+			w.Put("%s[%s] = %s", v, k, e)
+		}
+		w.Dec("}")
 		return v
 
 	case defs.ModelType:
@@ -250,6 +244,23 @@ func dbEncodeType(w writer.GenWriter, t *Type, source, target string) string {
 			w.Put("return nil, err")
 		}
 		w.Dec("}")
+		return v
+
+	case defs.OptionType:
+		w.Put("var %s any", v)
+		w.Inc("if %s.IsSet() {", source)
+		{
+			s := fmt.Sprintf("%s.Value()", source)
+			e := dbEncodeType(w, t.Sub, s, "e")
+			w.Put("%s = %s", v, e)
+		}
+		w.Dec("")
+		w.Inc("} else {")
+		{
+			w.Put("%s = nil", v)
+		}
+		w.Dec("}")
+		return v
 
 	case defs.RefType:
 		w.Put("%s, err := bson.ObjectIDFromHex(string(%s))", v, source)
@@ -260,12 +271,12 @@ func dbEncodeType(w writer.GenWriter, t *Type, source, target string) string {
 		w.Dec("}")
 		return v
 
-	case defs.TimeType:
-		w.Put("%s := bson.NewDateTimeFromTime(%s)", v, source)
-		return v
-
 	case defs.StringType:
 		return source
+
+	case defs.TimeType:
+		return fmt.Sprintf("bson.NewDateTimeFromTime(%s)", source)
 	}
-	return v
+
+	panic(fmt.Sprintf("unknown data type %d", t.Kind))
 }

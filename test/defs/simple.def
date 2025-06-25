@@ -1,0 +1,5 @@
+1 Simple {
+	name: string
+	date: time
+	maybe: ?float
+}
