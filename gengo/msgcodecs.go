@@ -37,6 +37,9 @@ func msgImports(w writer.GenWriter, ms []Model) {
 	if types[defs.OptionType] || types[defs.RefType] {
 		names["github.com/ab36245/go-model"] = true
 	}
+	if types[defs.TimeType] {
+		names["time"] = true
+	}
 	if len(names) > 0 {
 		w.Inc("import (")
 		{
