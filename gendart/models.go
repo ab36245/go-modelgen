@@ -8,8 +8,6 @@ func genModels(dir string, ms []Model, opts Opts) error {
 	w := writer.WithPrefix("  ")
 	w.Put("// WARNING!")
 	w.Put("// This code was generated automatically.")
-	w.Put("import 'package:flutter_model/flutter_model.dart';")
-	w.Put("")
 	modelImports(w, ms)
 	w.Put("")
 	w.Put("// For convenience")
@@ -23,7 +21,7 @@ func genModels(dir string, ms []Model, opts Opts) error {
 
 func modelImports(w writer.GenWriter, ms []Model) {
 	names := map[string]bool{
-		"flutter_model/flutter_model.dart": true,
+		"package:flutter_model/flutter_model.dart": true,
 	}
 	types := genTypes(ms)
 	_ = types
