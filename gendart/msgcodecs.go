@@ -172,11 +172,11 @@ func msgDecodeType(w writer.GenWriter, t *Type, target string) string {
 
 	case defs.RefType:
 		doGet(d, "String")
-		w.Put("%s := model.Ref(%s)", v, d)
+		w.Put("final %s = ModelRef(%s);", v, d)
 
 	case defs.OptionType:
 		w.Put("%s %s;", t.Name, v)
-		w.Inc("if (mpd.IfNil()) {")
+		w.Inc("if (mpd.ifNil()) {")
 		{
 			w.Put("%s = null;", v)
 		}
@@ -219,7 +219,7 @@ func msgEncodeField(w writer.GenWriter, f Field) {
 
 func msgEncodeType(w writer.GenWriter, t *Type, source string) {
 	doPut := func(method, local string) {
-		w.Put("mpe.Put%s(%s);", method, local)
+		w.Put("mpe.put%s(%s);", method, local)
 	}
 
 	switch t.Kind {
@@ -262,7 +262,7 @@ func msgEncodeType(w writer.GenWriter, t *Type, source string) {
 	case defs.OptionType:
 		w.Inc("if (%s != null) {", source)
 		{
-			msgEncodeType(w, t.Sub, source)
+			msgEncodeType(w, t.Sub, fmt.Sprintf("%s!", source))
 		}
 		w.Dec("")
 		w.Inc("} else {")
