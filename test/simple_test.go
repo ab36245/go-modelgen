@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/ab36245/go-modelgen/defs"
+	"github.com/ab36245/go-modelgen/gendart"
 	"github.com/ab36245/go-modelgen/gengo"
 	"github.com/ab36245/go-modelgen/parser"
 )
@@ -14,6 +15,10 @@ import (
 func TestSimpleGen(t *testing.T) {
 	name := "simple"
 	defs, err := load(name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = genDart(name, defs)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -39,6 +44,24 @@ func load(name string) ([]defs.Model, error) {
 		return nil, fmt.Errorf("parser failed: %w", err)
 	}
 	return defs, nil
+}
+
+func genDart(name string, defs []defs.Model) error {
+	dir, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("can't get working directory: %w", err)
+	}
+	path := filepath.Join(dir, "output", name, "dart")
+	err = os.MkdirAll(path, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("can't create output directory: %w", err)
+	}
+	opts := gendart.Opts{}
+	err = gendart.Generate(path, defs, opts)
+	if err != nil {
+		return fmt.Errorf("can't generate output: %w", err)
+	}
+	return nil
 }
 
 func genGo(name string, defs []defs.Model) error {

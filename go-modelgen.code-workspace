@@ -13,10 +13,6 @@
             "path": "../flutter_msgpack"
         },
         {
-            "name": "flutter_msgs",
-            "path": "../flutter_msgs"
-        },
-        {
             "name": "go-db",
             "path": "../go-db"
         },

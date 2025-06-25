@@ -2,4 +2,13 @@
 	name: string
 	date: time
 	maybe: ?float
+	names: []string
+}
+
+2 Other {
+	hello: Simple
+}
+
+3 Harder {
+	map: [int][]string
 }
