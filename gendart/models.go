@@ -11,7 +11,8 @@ func genModels(dir string, ms []Model, opts Opts) error {
 	modelImports(w, ms)
 	w.Put("")
 	w.Put("// For convenience")
-	w.Put("export 'package:flutter_model/flutter_model.dart' show ModelRef;")
+	// w.Put("export 'package:flutter_model/flutter_model.dart' show ModelRef;")
+	w.Put("export 'package:dart_model/dart_model.dart' show ModelRef;")
 	for _, m := range ms {
 		w.Put("")
 		modelClass(w, m)
@@ -21,7 +22,8 @@ func genModels(dir string, ms []Model, opts Opts) error {
 
 func modelImports(w writer.GenWriter, ms []Model) {
 	names := map[string]bool{
-		"package:flutter_model/flutter_model.dart": true,
+		// "package:flutter_model/flutter_model.dart": true,
+		"package:dart_model/dart_model.dart": true,
 	}
 	types := genTypes(ms)
 	_ = types

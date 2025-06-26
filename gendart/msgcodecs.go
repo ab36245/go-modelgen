@@ -29,8 +29,9 @@ func genMsgCodecs(dir string, ms []Model, opts Opts) error {
 func msgImports(w writer.GenWriter, ms []Model) {
 	names := map[string]bool{
 		"dart:typed_data": true,
-		"package:flutter_msgpack/flutter_msgpack.dart": true,
-		"models.dart": true,
+		// "package:flutter_msgpack/flutter_msgpack.dart": true,
+		"package:dart_msgpack/dart_msgpack.dart": true,
+		"models.dart":                            true,
 	}
 	types := genTypes(ms)
 	_ = types
