@@ -30,10 +30,25 @@ func main() {
 	cmd := cli.Command{
 		Options: cli.Options{
 			&cli.Option{
+				Name:        "dart-msgs",
+				Description: "Generate binary message codecs",
+				Binding:     cli.BoolFlag().Bind(&dartOpts.Msgs),
+			},
+			&cli.Option{
 				Name:        "dart-path",
 				Description: "Output path for dart code",
 				Short:       "d",
 				Binding:     cli.StringSlice().Bind(&dartPaths),
+			},
+			&cli.Option{
+				Name:        "go-db",
+				Description: "Generate db-specific codecs",
+				Binding:     cli.BoolFlag().Bind(&goOpts.Db),
+			},
+			&cli.Option{
+				Name:        "go-msgs",
+				Description: "Generate binary message codecs",
+				Binding:     cli.BoolFlag().Bind(&goOpts.Msgs),
 			},
 			&cli.Option{
 				Name:        "go-format",
