@@ -2,6 +2,6 @@ package gengo
 
 type Opts struct {
 	Db       bool
-	Msgs     bool
+	Msgpack  bool
 	Reformat bool
 }

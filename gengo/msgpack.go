@@ -7,28 +7,30 @@ import (
 	"github.com/ab36245/go-modelgen/writer"
 )
 
-func genMsgCodecs(dir string, ms []Model, opts Opts) error {
+const msgpackExtType = 0
+
+func genMsgpack(dir string, ms []Model, opts Opts) error {
 	w := writer.WithPrefix("\t")
 	w.Put("// WARNING!")
 	w.Put("// This code was generated automatically.")
 	w.Put("package models")
 	w.Put("")
-	msgImports(w, ms)
+	msgpackImports(w, ms)
 	w.Put("")
-	msgDecodeFunc(w, ms)
+	msgpackDecodeFunc(w, ms)
 	w.Put("")
-	msgEncodeFunc(w, ms)
+	msgpackEncodeFunc(w, ms)
 	for _, m := range ms {
 		w.Put("")
-		msgDecodeModel(w, m)
+		msgpackDecodeModel(w, m)
 		w.Put("")
-		msgEncodeModel(w, m)
+		msgpackEncodeModel(w, m)
 	}
 	w.Put("")
-	return genSave(dir, "msgcodecs.go", opts, w.Code())
+	return genSave(dir, "msgpack.go", opts, w.Code())
 }
 
-func msgImports(w writer.GenWriter, ms []Model) {
+func msgpackImports(w writer.GenWriter, ms []Model) {
 	names := map[string]bool{
 		"fmt":                           true,
 		"github.com/ab36245/go-msgpack": true,
@@ -51,14 +53,18 @@ func msgImports(w writer.GenWriter, ms []Model) {
 	}
 }
 
-func msgDecodeFunc(w writer.GenWriter, ms []Model) {
-	w.Inc("func DecodeMsg(b []byte) (any, error) {")
+func msgpackDecodeFunc(w writer.GenWriter, ms []Model) {
+	w.Inc("func DecodeMsgpack(mpd *msgpack.Decoder) (any, error) {")
 	{
-		w.Put("mpd := msgpack.NewDecoder(b)")
-		w.Put("id, err := mpd.GetUint()")
+		w.Put("typ, id, err := mpd.GetExtUint()")
 		w.Inc("if err != nil {")
 		{
 			w.Put("return nil, err")
+		}
+		w.Dec("}")
+		w.Inc("if typ != %d {", msgpackExtType)
+		{
+			w.Put("return nil, fmt.Errorf(\"unexpected extension type %d\", typ)")
 		}
 		w.Dec("}")
 
@@ -66,7 +72,7 @@ func msgDecodeFunc(w writer.GenWriter, ms []Model) {
 		for _, m := range ms {
 			w.Inc("case %d:", m.Id)
 			{
-				w.Put("return decode%sMsg(mpd)", m.Name)
+				w.Put("return decode%sMsgpack(mpd)", m.Name)
 			}
 			w.Dec("")
 		}
@@ -80,68 +86,60 @@ func msgDecodeFunc(w writer.GenWriter, ms []Model) {
 	w.Dec("}")
 }
 
-func msgEncodeFunc(w writer.GenWriter, ms []Model) {
-	w.Inc("func EncodeMsg(v any, prefix []byte) ([]byte, error) {")
+func msgpackEncodeFunc(w writer.GenWriter, ms []Model) {
+	w.Inc("func EncodeMsgpack(mpe *msgpack.Encoder, v any) error {")
 	{
-		w.Put("mpe := msgpack.NewEncoderWithPrefix(prefix)")
 		w.Put("var err error")
 		w.Put("switch v := v.(type) {")
 		for _, m := range ms {
 			w.Inc("case %s:", m.Name)
 			{
-				w.Put("err = mpe.PutUint(%d)", m.Id)
-				w.Inc("if err != nil {")
-				{
-					w.Put("return nil, err")
-				}
-				w.Dec("}")
-				w.Put("err = encode%sMsg(mpe, v)", m.Name)
-				w.Inc("if err != nil {")
-				{
-					w.Put("return nil, err")
-				}
-				w.Dec("}")
+				w.Put("err = encode%sMsgpack(mpe, v)", m.Name)
 			}
 			w.Dec("")
 		}
 		w.Inc("default:")
 		{
-			w.Put("return nil, fmt.Errorf(\"unknown model %T\", v)")
+			w.Put("err = fmt.Errorf(\"unknown model %T\", v)")
 		}
 		w.Dec("")
 		w.Put("}")
-		w.Put("return mpe.Bytes(), nil")
+		w.Put("return err")
 	}
 	w.Dec("}")
 }
 
-func msgDecodeModel(w writer.GenWriter, m Model) {
-	w.Inc("func decode%sMsg(mpd *msgpack.Decoder) (%s, error) {", m.Name, m.Name)
+func msgpackDecodeModel(w writer.GenWriter, m Model) {
+	param := "mpd"
+	if len(m.Fields) == 0 {
+		param = "_"
+	}
+	w.Inc("func decode%sMsgpack(%s *msgpack.Decoder) (%s, error) {", m.Name, param, m.Name)
 	{
 		w.Put("m := %s{}", m.Name)
 		if len(m.Fields) > 0 {
 			for _, f := range m.Fields {
-				msgDecodeField(w, f)
+				msgpackDecodeField(w, f)
 			}
+			w.Put("")
 		}
-		w.Put("")
 		w.Put("return m, nil")
 	}
 	w.Dec("}")
 }
 
-func msgDecodeField(w writer.GenWriter, f Field) {
+func msgpackDecodeField(w writer.GenWriter, f Field) {
 	w.Put("")
 	w.Put("// %s", f.Name)
 	w.Inc("{")
 	{
-		target := msgDecodeType(w, f.Type, "v")
+		target := msgpackDecodeType(w, f.Type, "v")
 		w.Put("m.%s = %s", f.Name, target)
 	}
 	w.Dec("}")
 }
 
-func msgDecodeType(w writer.GenWriter, t *Type, target string) string {
+func msgpackDecodeType(w writer.GenWriter, t *Type, target string) string {
 	doGet := func(local, method string) {
 		w.Put("%s, err := mpd.Get%s()", local, method)
 		w.Inc("if err != nil {")
@@ -164,7 +162,7 @@ func msgDecodeType(w writer.GenWriter, t *Type, target string) string {
 		w.Put("%s := make([]%s, %s)", v, t.Sub.Name, n)
 		w.Inc("for %s := range %s {", i, n)
 		{
-			e := msgDecodeType(w, t.Sub, "v")
+			e := msgpackDecodeType(w, t.Sub, "v")
 			w.Put("%s[%s] = %s", v, i, e)
 		}
 		w.Dec("}")
@@ -187,8 +185,8 @@ func msgDecodeType(w writer.GenWriter, t *Type, target string) string {
 		w.Put("%s := make(map[%s]%s, %s)", v, t.Key.Name, t.Sub.Name, n)
 		w.Inc("for range %s {", i, n)
 		{
-			k := msgDecodeType(w, t.Key, "k")
-			e := msgDecodeType(w, t.Sub, "e")
+			k := msgpackDecodeType(w, t.Key, "k")
+			e := msgpackDecodeType(w, t.Sub, "e")
 			w.Put("%s[%s] = %s", v, k, e)
 		}
 		w.Dec("}")
@@ -196,7 +194,7 @@ func msgDecodeType(w writer.GenWriter, t *Type, target string) string {
 	case defs.ModelType:
 		w.Put("var %s %s", v, t.Name)
 		w.Put("var err error")
-		w.Inc("if %s, err = decode%sMsg(mpd); err != nil {", v, t.Name)
+		w.Inc("if %s, err = decode%sMsgpack(mpd); err != nil {", v, t.Name)
 		{
 			w.Put("return m, err")
 		}
@@ -221,7 +219,7 @@ func msgDecodeType(w writer.GenWriter, t *Type, target string) string {
 		w.Dec("")
 		w.Inc("} else {")
 		{
-			e := msgDecodeType(w, t.Sub, "e")
+			e := msgpackDecodeType(w, t.Sub, "e")
 			w.Put("%s = model.NewOption(%s)", v, e)
 		}
 		w.Dec("}")
@@ -238,49 +236,58 @@ func msgDecodeType(w writer.GenWriter, t *Type, target string) string {
 	return v
 }
 
-func msgEncodeModel(w writer.GenWriter, m Model) {
-	w.Inc("func encode%sMsg(mpe *msgpack.Encoder, m %s) error {", m.Name, m.Name)
+func msgpackEncodeModel(w writer.GenWriter, m Model) {
+	param := "m"
+	if len(m.Fields) == 0 {
+		param = "_"
+	}
+	w.Inc("func encode%sMsgpack(mpe *msgpack.Encoder, %s %s) error {", m.Name, param, m.Name)
 	{
+		w.Put("mpe.PutExtUint(%d, %d)", msgpackExtType, m.Id)
 		if len(m.Fields) > 0 {
-			w.Put("var err error")
+			// w.Put("var err error")
 			for _, f := range m.Fields {
-				msgEncodeField(w, f)
+				msgpackEncodeField(w, f)
 			}
+			w.Put("")
 		}
-		w.Put("")
 		w.Put("return nil")
 	}
 	w.Dec("}")
 }
 
-func msgEncodeField(w writer.GenWriter, f Field) {
+func msgpackEncodeField(w writer.GenWriter, f Field) {
 	w.Put("")
 	w.Put("// %s", f.Name)
 	w.Inc("{")
 	{
 		source := fmt.Sprintf("m.%s", f.Name)
-		msgEncodeType(w, f.Type, source)
+		msgpackEncodeType(w, f.Type, source)
 	}
 	w.Dec("}")
 }
 
-func msgEncodeType(w writer.GenWriter, t *Type, source string) {
+func msgpackEncodeType(w writer.GenWriter, t *Type, source string) {
 	doPut := func(method, local string) {
-		w.Put("err = mpe.Put%s(%s)", method, local)
-		w.Inc("if err != nil {")
-		{
-			w.Put("return err")
+		switch method {
+		case "Bytes", "String":
+			w.Inc("if err := mpe.Put%s(%s) ; err != nil {", method, local)
+			{
+				w.Put("return err")
+			}
+			w.Dec("}")
+		default:
+			w.Put("mpe.Put%s(%s)", method, local)
 		}
-		w.Dec("}")
 	}
 
 	switch t.Kind {
 	case defs.ArrayType:
-		doPut("ArrayLength", fmt.Sprintf("len(%s)", source))
+		doPut("ArrayLength", fmt.Sprintf("uint32(len(%s))", source))
 		e := t.varName("e")
 		w.Inc("for _, %s := range %s {", e, source)
 		{
-			msgEncodeType(w, t.Sub, e)
+			msgpackEncodeType(w, t.Sub, e)
 		}
 		w.Dec("}")
 
@@ -297,19 +304,18 @@ func msgEncodeType(w writer.GenWriter, t *Type, source string) {
 		doPut("Int", fmt.Sprintf("int64(%s)", source))
 
 	case defs.MapType:
-		doPut("MapLength", fmt.Sprintf("len(%s)", source))
+		doPut("MapLength", fmt.Sprintf("uint32(len(%s))", source))
 		k := t.varName("k")
 		e := t.varName("e")
 		w.Inc("for %s, %s := range %s {", k, e, source)
 		{
-			msgEncodeType(w, t.Key, k)
-			msgEncodeType(w, t.Sub, e)
+			msgpackEncodeType(w, t.Key, k)
+			msgpackEncodeType(w, t.Sub, e)
 		}
 		w.Dec("}")
 
 	case defs.ModelType:
-		w.Put("err = encode%sMsg(mpe, %s)", t.Name, source)
-		w.Inc("if err != nil {")
+		w.Inc("if err := encode%sMsgpack(mpe, %s); err != nil {", t.Name, source)
 		{
 			w.Put("return err")
 		}
@@ -319,7 +325,7 @@ func msgEncodeType(w writer.GenWriter, t *Type, source string) {
 		w.Inc("if %s.IsSet() {", source)
 		{
 			s := fmt.Sprintf("%s.Value()", source)
-			msgEncodeType(w, t.Sub, s)
+			msgpackEncodeType(w, t.Sub, s)
 		}
 		w.Dec("")
 		w.Inc("} else {")

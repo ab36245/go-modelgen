@@ -7,7 +7,7 @@ import (
 	"github.com/ab36245/go-modelgen/writer"
 )
 
-func genDbCodecs(dir string, ms []Model, opts Opts) error {
+func genDb(dir string, ms []Model, opts Opts) error {
 	w := writer.WithPrefix("\t")
 	w.Put("// WARNING!")
 	w.Put("// This code was generated automatically.")

@@ -22,12 +22,12 @@ func Generate(path string, ds []defs.Model, opts Opts) error {
 		return err
 	}
 	if opts.Db {
-		if err := genDbCodecs(dir, ms, opts); err != nil {
+		if err := genDb(dir, ms, opts); err != nil {
 			return err
 		}
 	}
-	if opts.Msgs {
-		if err := genMsgCodecs(dir, ms, opts); err != nil {
+	if opts.Msgpack {
+		if err := genMsgpack(dir, ms, opts); err != nil {
 			return err
 		}
 	}

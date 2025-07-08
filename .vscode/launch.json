@@ -12,7 +12,9 @@
             "program": "${workspaceFolder}",
             "args": [
                 "--dart-path=${workspaceFolder}/../fin/app/lib",
+                "--dart-msgpack",
                 "--go-path=${workspaceFolder}/../fin/server",
+                "--go-msgpack",
                 "${workspaceFolder}/../fin/shared",
             ]
         }

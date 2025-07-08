@@ -30,9 +30,9 @@ func main() {
 	cmd := cli.Command{
 		Options: cli.Options{
 			&cli.Option{
-				Name:        "dart-msgs",
+				Name:        "dart-msgpack",
 				Description: "Generate binary message codecs",
-				Binding:     cli.BoolFlag().Bind(&dartOpts.Msgs),
+				Binding:     cli.BoolFlag().Bind(&dartOpts.Msgpack),
 			},
 			&cli.Option{
 				Name:        "dart-path",
@@ -46,9 +46,9 @@ func main() {
 				Binding:     cli.BoolFlag().Bind(&goOpts.Db),
 			},
 			&cli.Option{
-				Name:        "go-msgs",
-				Description: "Generate binary message codecs",
-				Binding:     cli.BoolFlag().Bind(&goOpts.Msgs),
+				Name:        "go-msgpack",
+				Description: "Generate codecs for msgpack",
+				Binding:     cli.BoolFlag().Bind(&goOpts.Msgpack),
 			},
 			&cli.Option{
 				Name:        "go-format",

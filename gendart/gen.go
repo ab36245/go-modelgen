@@ -18,8 +18,8 @@ func Generate(path string, ds []defs.Model, opts Opts) error {
 	if err := genModels(dir, ms, opts); err != nil {
 		return err
 	}
-	if opts.Msgs {
-		if err := genMsgCodecs(dir, ms, opts); err != nil {
+	if opts.Msgpack {
+		if err := genMsgpack(dir, ms, opts); err != nil {
 			return err
 		}
 	}
