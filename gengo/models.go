@@ -33,7 +33,7 @@ func modelImports(w writer.GenWriter, ms []Model) {
 		"github.com/ab36245/go-model": true,
 	}
 	types := genTypes(ms)
-	if types[defs.TimeType] {
+	if _, ok := types[defs.TimeType]; ok {
 		names["time"] = true
 	}
 	if len(names) > 0 {

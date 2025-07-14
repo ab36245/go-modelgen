@@ -32,10 +32,13 @@ func msgpackImports(w writer.GenWriter, ms []Model) {
 		"github.com/ab36245/go-msgpack": true,
 	}
 	types := genTypes(ms)
-	if types[defs.OptionType] || types[defs.RefType] {
+	if _, ok := types[defs.OptionType]; ok {
 		names["github.com/ab36245/go-model"] = true
 	}
-	if types[defs.TimeType] {
+	if _, ok := types[defs.RefType]; ok {
+		names["github.com/ab36245/go-model"] = true
+	}
+	if types[defs.TimeType]&0x06 != 0 {
 		names["time"] = true
 	}
 	if len(names) > 0 {
@@ -143,7 +146,7 @@ func msgpackDecodeType(w writer.GenWriter, t *Type, target string) string {
 	case defs.ModelType:
 		w.Put("var %s %s", v, t.Name)
 		w.Put("var err error")
-		w.Inc("if %s, err = decode%sMsgpack(mpd); err != nil {", v, t.Name)
+		w.Inc("if %s, err = %sMsgpackCodec.Decode(mpd); err != nil {", v, t.Name)
 		{
 			w.Put("return m, err")
 		}
@@ -264,7 +267,7 @@ func msgpackEncodeType(w writer.GenWriter, t *Type, source string) {
 		w.Dec("}")
 
 	case defs.ModelType:
-		w.Inc("if err := encode%sMsgpack(mpe, %s); err != nil {", t.Name, source)
+		w.Inc("if err := %sMsgpackCodec.Encode(mpe, %s); err != nil {", t.Name, source)
 		{
 			w.Put("return err")
 		}

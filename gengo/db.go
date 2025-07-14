@@ -28,10 +28,13 @@ func dbImports(w writer.GenWriter, ms []Model) {
 		"github.com/ab36245/go-db":            true,
 	}
 	types := genTypes(ms)
-	if types[defs.OptionType] || types[defs.RefType] {
+	if _, ok := types[defs.OptionType]; ok {
 		names["github.com/ab36245/go-model"] = true
 	}
-	if types[defs.TimeType] {
+	if _, ok := types[defs.RefType]; ok {
+		names["github.com/ab36245/go-model"] = true
+	}
+	if types[defs.TimeType]&0x06 != 0 {
 		names["time"] = true
 	}
 	if len(names) > 0 {

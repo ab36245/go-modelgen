@@ -95,25 +95,25 @@ func genSave(opts Opts, name string, code string) error {
 	return nil
 }
 
-func genTypes(ms []Model) map[defs.TypeKind]bool {
-	set := make(map[defs.TypeKind]bool)
+func genTypes(ms []Model) map[defs.TypeKind]int {
+	set := make(map[defs.TypeKind]int)
 
-	var check func(*Type)
-	check = func(t *Type) {
+	var check func(*Type, int)
+	check = func(t *Type, flag int) {
 		switch t.Kind {
 		case defs.ArrayType:
-			check(t.Sub)
+			check(t.Sub, 2)
 		case defs.MapType:
-			check(t.Key)
-			check(t.Sub)
+			check(t.Key, 4)
+			check(t.Sub, 4)
 		default:
-			set[t.Kind] = true
+			set[t.Kind] |= flag
 		}
 	}
 
 	for _, m := range ms {
 		for _, f := range m.Fields {
-			check(f.Type)
+			check(f.Type, 1)
 		}
 	}
 	return set
