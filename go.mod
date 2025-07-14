@@ -16,6 +16,8 @@ require (
 
 require github.com/ab36245/go-strcase v0.0.0-20250613073624-43f95b65dcc2
 
+require golang.org/x/mod v0.25.0 // indirect
+
 require (
 	github.com/ab36245/go-source v0.0.0-20250610102038-4f637c704786
 	github.com/mattn/go-runewidth v0.0.16 // indirect

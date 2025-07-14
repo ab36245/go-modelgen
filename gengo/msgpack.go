@@ -9,30 +9,26 @@ import (
 
 const msgpackExtType = 0
 
-func genMsgpack(dir string, ms []Model, opts Opts) error {
+func genMsgpack(opts Opts, ms []Model) error {
 	w := writer.WithPrefix("\t")
+	msgpackFile(w, ms)
+	return genSave(opts, "msgpack.go", w.Code())
+}
+
+func msgpackFile(w writer.GenWriter, ms []Model) {
 	w.Put("// WARNING!")
 	w.Put("// This code was generated automatically.")
 	w.Put("package models")
 	w.Put("")
 	msgpackImports(w, ms)
-	w.Put("")
-	msgpackDecodeFunc(w, ms)
-	w.Put("")
-	msgpackEncodeFunc(w, ms)
 	for _, m := range ms {
 		w.Put("")
-		msgpackDecodeModel(w, m)
-		w.Put("")
-		msgpackEncodeModel(w, m)
+		msgpackCodec(w, m)
 	}
-	w.Put("")
-	return genSave(dir, "msgpack.go", opts, w.Code())
 }
 
 func msgpackImports(w writer.GenWriter, ms []Model) {
 	names := map[string]bool{
-		"fmt":                           true,
 		"github.com/ab36245/go-msgpack": true,
 	}
 	types := genTypes(ms)
@@ -53,68 +49,21 @@ func msgpackImports(w writer.GenWriter, ms []Model) {
 	}
 }
 
-func msgpackDecodeFunc(w writer.GenWriter, ms []Model) {
-	w.Inc("func DecodeMsgpack(mpd *msgpack.Decoder) (any, error) {")
+func msgpackCodec(w writer.GenWriter, m Model) {
+	w.Inc("var %sMsgpackCodec = msgpack.Codec[%s]{", m.Name, m.Name)
 	{
-		w.Put("typ, id, err := mpd.GetExtUint()")
-		w.Inc("if err != nil {")
-		{
-			w.Put("return nil, err")
-		}
-		w.Dec("}")
-		w.Inc("if typ != %d {", msgpackExtType)
-		{
-			w.Put("return nil, fmt.Errorf(\"unexpected extension type %d\", typ)")
-		}
-		w.Dec("}")
-
-		w.Put("switch id {")
-		for _, m := range ms {
-			w.Inc("case %d:", m.Id)
-			{
-				w.Put("return decode%sMsgpack(mpd)", m.Name)
-			}
-			w.Dec("")
-		}
-		w.Inc("default:")
-		{
-			w.Put("return nil, fmt.Errorf(\"unknown model id %d\", id)")
-		}
-		w.Dec("")
-		w.Put("}")
+		msgpackDecode(w, m)
+		msgpackEncode(w, m)
 	}
 	w.Dec("}")
 }
 
-func msgpackEncodeFunc(w writer.GenWriter, ms []Model) {
-	w.Inc("func EncodeMsgpack(mpe *msgpack.Encoder, v any) error {")
-	{
-		w.Put("var err error")
-		w.Put("switch v := v.(type) {")
-		for _, m := range ms {
-			w.Inc("case %s:", m.Name)
-			{
-				w.Put("err = encode%sMsgpack(mpe, v)", m.Name)
-			}
-			w.Dec("")
-		}
-		w.Inc("default:")
-		{
-			w.Put("err = fmt.Errorf(\"unknown model %T\", v)")
-		}
-		w.Dec("")
-		w.Put("}")
-		w.Put("return err")
-	}
-	w.Dec("}")
-}
-
-func msgpackDecodeModel(w writer.GenWriter, m Model) {
+func msgpackDecode(w writer.GenWriter, m Model) {
 	param := "mpd"
 	if len(m.Fields) == 0 {
 		param = "_"
 	}
-	w.Inc("func decode%sMsgpack(%s *msgpack.Decoder) (%s, error) {", m.Name, param, m.Name)
+	w.Inc("Decode: func(%s *msgpack.Decoder) (%s, error) {", param, m.Name)
 	{
 		w.Put("m := %s{}", m.Name)
 		if len(m.Fields) > 0 {
@@ -125,7 +74,7 @@ func msgpackDecodeModel(w writer.GenWriter, m Model) {
 		}
 		w.Put("return m, nil")
 	}
-	w.Dec("}")
+	w.Dec("},")
 }
 
 func msgpackDecodeField(w writer.GenWriter, f Field) {
@@ -236,12 +185,12 @@ func msgpackDecodeType(w writer.GenWriter, t *Type, target string) string {
 	return v
 }
 
-func msgpackEncodeModel(w writer.GenWriter, m Model) {
+func msgpackEncode(w writer.GenWriter, m Model) {
 	param := "m"
 	if len(m.Fields) == 0 {
 		param = "_"
 	}
-	w.Inc("func encode%sMsgpack(mpe *msgpack.Encoder, %s %s) error {", m.Name, param, m.Name)
+	w.Inc("Encode: func(mpe *msgpack.Encoder, %s %s) error {", param, m.Name)
 	{
 		w.Put("mpe.PutExtUint(%d, %d)", msgpackExtType, m.Id)
 		if len(m.Fields) > 0 {
@@ -253,7 +202,7 @@ func msgpackEncodeModel(w writer.GenWriter, m Model) {
 		}
 		w.Put("return nil")
 	}
-	w.Dec("}")
+	w.Dec("},")
 }
 
 func msgpackEncodeField(w writer.GenWriter, f Field) {

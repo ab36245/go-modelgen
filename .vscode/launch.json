@@ -5,17 +5,16 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "run test",
+            "name": "modelgen go",
             "type": "go",
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceFolder}",
             "args": [
-                "--dart-path=${workspaceFolder}/../fin/app/lib",
-                "--dart-msgpack",
-                "--go-path=${workspaceFolder}/../fin/server",
-                "--go-msgpack",
-                "${workspaceFolder}/../fin/shared",
+                "go",
+                "-o", "${workspaceFolder}/../test-mux/server/models/models.go",
+                "-m", "${workspaceFolder}/../test-mux/server/models/mp/codecs.go",
+                "${workspaceFolder}/../test-mux/shared",
             ]
         }
     ]

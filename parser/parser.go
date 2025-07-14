@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/ab36245/go-modelgen/defs"
 	"github.com/ab36245/go-source/buffer"
+
+	"github.com/ab36245/go-modelgen/defs"
 )
 
 func NewParser(path string) (*Parser, error) {

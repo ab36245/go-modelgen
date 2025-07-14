@@ -5,8 +5,13 @@ import (
 	"github.com/ab36245/go-modelgen/writer"
 )
 
-func genModels(dir string, ms []Model, opts Opts) error {
+func genModels(opts Opts, ms []Model) error {
 	w := writer.WithPrefix("\t")
+	modelFile(w, ms)
+	return genSave(opts, "models.go", w.Code())
+}
+
+func modelFile(w writer.GenWriter, ms []Model) {
 	w.Put("// WARNING!")
 	w.Put("// This code was generated automatically.")
 	w.Put("package models")
@@ -21,7 +26,6 @@ func genModels(dir string, ms []Model, opts Opts) error {
 		w.Put("")
 		modelMethods(w, m)
 	}
-	return genSave(dir, "models.go", opts, w.Code())
 }
 
 func modelImports(w writer.GenWriter, ms []Model) {

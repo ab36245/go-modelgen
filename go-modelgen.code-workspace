@@ -13,6 +13,10 @@
             "path": "../flutter_msgpack"
         },
         {
+            "name": "go-cli",
+            "path": "../go-cli"
+        },
+        {
             "name": "go-db",
             "path": "../go-db"
         },

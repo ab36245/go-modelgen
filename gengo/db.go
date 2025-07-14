@@ -7,7 +7,7 @@ import (
 	"github.com/ab36245/go-modelgen/writer"
 )
 
-func genDb(dir string, ms []Model, opts Opts) error {
+func genDb(opts Opts, ms []Model) error {
 	w := writer.WithPrefix("\t")
 	w.Put("// WARNING!")
 	w.Put("// This code was generated automatically.")
@@ -16,9 +16,9 @@ func genDb(dir string, ms []Model, opts Opts) error {
 	dbImports(w, ms)
 	for _, m := range ms {
 		w.Put("")
-		dbModel(w, m)
+		dbCodec(w, m)
 	}
-	return genSave(dir, "dbcodecs.go", opts, w.Code())
+	return genSave(opts, "db.go", w.Code())
 }
 
 func dbImports(w writer.GenWriter, ms []Model) {
@@ -45,16 +45,16 @@ func dbImports(w writer.GenWriter, ms []Model) {
 	}
 }
 
-func dbModel(w writer.GenWriter, m Model) {
+func dbCodec(w writer.GenWriter, m Model) {
 	w.Inc("var %sDbCodec = db.Codec[%s]{", m.Name, m.Name)
 	{
-		dbDecodeModel(w, m)
-		dbEncodeModel(w, m)
+		dbDecode(w, m)
+		dbEncode(w, m)
 	}
 	w.Dec("}")
 }
 
-func dbDecodeModel(w writer.GenWriter, m Model) {
+func dbDecode(w writer.GenWriter, m Model) {
 	w.Inc("Decode: func(d bson.M) (%s, error) {", m.Name)
 	{
 		w.Put("m := %s{}", m.Name)
@@ -171,7 +171,7 @@ func dbDecodeType(w writer.GenWriter, t *Type, source, target string) string {
 	return v
 }
 
-func dbEncodeModel(w writer.GenWriter, m Model) {
+func dbEncode(w writer.GenWriter, m Model) {
 	w.Inc("Encode: func(m %s) (bson.M, error) {", m.Name)
 	{
 		w.Put("e := make(bson.M, %d)", len(m.Fields))

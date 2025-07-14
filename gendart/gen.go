@@ -9,7 +9,7 @@ import (
 	"github.com/ab36245/go-modelgen/defs"
 )
 
-func Generate(path string, ds []defs.Model, opts Opts) error {
+func gen(path string, ds []defs.Model, opts Opts) error {
 	dir := filepath.Join(path, "models")
 	if err := os.MkdirAll(dir, fs.ModePerm); err != nil {
 		return fmt.Errorf("can't create %s: %w", dir, err)
