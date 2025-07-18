@@ -9,47 +9,34 @@ import (
 
 const msgpackExtType = 0
 
-func genMsgpack(opts Opts, ms []Model) error {
+func genMsgpack(opts Opts, ms Models) error {
 	w := writer.WithPrefix("\t")
 	msgpackFile(w, ms)
 	return genSave(opts, "msgpack.go", w.Code())
 }
 
-func msgpackFile(w writer.GenWriter, ms []Model) {
+func msgpackFile(w writer.GenWriter, ms Models) {
 	w.Put("// WARNING!")
 	w.Put("// This code was generated automatically.")
 	w.Put("package models")
 	w.Put("")
 	msgpackImports(w, ms)
-	for _, m := range ms {
+	for _, m := range ms.List {
 		w.Put("")
 		msgpackCodec(w, m)
 	}
 }
 
-func msgpackImports(w writer.GenWriter, ms []Model) {
-	names := map[string]bool{
-		"github.com/ab36245/go-msgpack": true,
+func msgpackImports(w writer.GenWriter, ms Models) {
+	imports := &Imports{}
+	imports.add("github.com/ab36245/go-msgpack")
+	if ms.Types.HasOption() || ms.Types.HasRef() {
+		imports.add("github.com/ab36245/go-model")
 	}
-	types := genTypes(ms)
-	if _, ok := types[defs.OptionType]; ok {
-		names["github.com/ab36245/go-model"] = true
+	if ms.Types.HasTimeArray() || ms.Types.HasTimeMap() {
+		imports.add("time")
 	}
-	if _, ok := types[defs.RefType]; ok {
-		names["github.com/ab36245/go-model"] = true
-	}
-	if types[defs.TimeType]&0x06 != 0 {
-		names["time"] = true
-	}
-	if len(names) > 0 {
-		w.Inc("import (")
-		{
-			for name := range names {
-				w.Put("%q", name)
-			}
-		}
-		w.Dec(")")
-	}
+	w.Put(imports.String())
 }
 
 func msgpackCodec(w writer.GenWriter, m Model) {

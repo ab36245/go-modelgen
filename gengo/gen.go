@@ -7,25 +7,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ab36245/go-runner"
 	"golang.org/x/mod/modfile"
 
-	"github.com/ab36245/go-modelgen/defs"
+	"github.com/ab36245/go-runner"
 )
-
-func genFile(path string, name string) (string, string, error) {
-	var dir string
-	var file string
-	if strings.HasSuffix(path, ".go") {
-		dir = filepath.Dir(path)
-		file = filepath.Base(path)
-	} else {
-		dir = path
-		file = name
-	}
-	abs, err := filepath.Abs(dir)
-	return abs, file, err
-}
 
 func genFormat(code string) (string, error) {
 	var output []byte
@@ -93,28 +78,4 @@ func genSave(opts Opts, name string, code string) error {
 		return fmt.Errorf("can't create %s: %w", file, err)
 	}
 	return nil
-}
-
-func genTypes(ms []Model) map[defs.TypeKind]int {
-	set := make(map[defs.TypeKind]int)
-
-	var check func(*Type, int)
-	check = func(t *Type, flag int) {
-		switch t.Kind {
-		case defs.ArrayType:
-			check(t.Sub, 2)
-		case defs.MapType:
-			check(t.Key, 4)
-			check(t.Sub, 4)
-		default:
-			set[t.Kind] |= flag
-		}
-	}
-
-	for _, m := range ms {
-		for _, f := range m.Fields {
-			check(f.Type, 1)
-		}
-	}
-	return set
 }

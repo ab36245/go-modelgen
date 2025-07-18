@@ -7,45 +7,38 @@ import (
 	"github.com/ab36245/go-modelgen/writer"
 )
 
-func genDb(opts Opts, ms []Model) error {
+func genDb(opts Opts, ms Models) error {
 	w := writer.WithPrefix("\t")
+	dbFile(w, ms)
+	return genSave(opts, "db.go", w.Code())
+}
+
+func dbFile(w writer.GenWriter, ms Models) {
 	w.Put("// WARNING!")
 	w.Put("// This code was generated automatically.")
 	w.Put("package models")
 	w.Put("")
 	dbImports(w, ms)
-	for _, m := range ms {
+	for _, m := range ms.List {
 		w.Put("")
 		dbCodec(w, m)
 	}
-	return genSave(opts, "db.go", w.Code())
 }
 
-func dbImports(w writer.GenWriter, ms []Model) {
-	names := map[string]bool{
-		"fmt":                                 true,
-		"go.mongodb.org/mongo-driver/v2/bson": true,
-		"github.com/ab36245/go-db":            true,
+func dbImports(w writer.GenWriter, ms Models) {
+	imports := &Imports{}
+	imports.add("fmt")
+	imports.add("go.mongodb.org/mongo-driver/v2/bson")
+	imports.add("github.com/ab36245/go-db")
+	if ms.Types.HasOption() {
+		imports.add("github.com/ab36245/go-model")
+	} else if ms.Types.HasRef() {
+		imports.add("github.com/ab36245/go-model")
 	}
-	types := genTypes(ms)
-	if _, ok := types[defs.OptionType]; ok {
-		names["github.com/ab36245/go-model"] = true
+	if ms.Types.HasTimeArray() || ms.Types.HasTimeMap() {
+		imports.add("time")
 	}
-	if _, ok := types[defs.RefType]; ok {
-		names["github.com/ab36245/go-model"] = true
-	}
-	if types[defs.TimeType]&0x06 != 0 {
-		names["time"] = true
-	}
-	if len(names) > 0 {
-		w.Inc("import (")
-		{
-			for name := range names {
-				w.Put("%q", name)
-			}
-		}
-		w.Dec(")")
-	}
+	w.Put(imports.String())
 }
 
 func dbCodec(w writer.GenWriter, m Model) {

@@ -4,8 +4,13 @@ import (
 	"github.com/ab36245/go-modelgen/writer"
 )
 
-func genModels(dir string, ms []Model, opts Opts) error {
+func genModels(opts Opts, ms Models) error {
 	w := writer.WithPrefix("  ")
+	modelFile(w, ms)
+	return genSave(opts, "models.dart", w.Code())
+}
+
+func modelFile(w writer.GenWriter, ms Models) {
 	w.Put("// WARNING!")
 	w.Put("// This code was generated automatically.")
 	modelImports(w, ms)
@@ -13,26 +18,16 @@ func genModels(dir string, ms []Model, opts Opts) error {
 	w.Put("// For convenience")
 	// w.Put("export 'package:flutter_model/flutter_model.dart' show ModelRef;")
 	w.Put("export 'package:dart_model/dart_model.dart' show ModelRef;")
-	for _, m := range ms {
+	for _, m := range ms.List {
 		w.Put("")
 		modelClass(w, m)
 	}
-	return genSave(dir, "models.dart", opts, w.Code())
 }
 
-func modelImports(w writer.GenWriter, ms []Model) {
-	names := map[string]bool{
-		// "package:flutter_model/flutter_model.dart": true,
-		"package:dart_model/dart_model.dart": true,
-	}
-	types := genTypes(ms)
-	_ = types
-	// if types[defs.TimeType] {
-	// 	names["time"] = true
-	// }
-	for name := range names {
-		w.Put("import '%s';", name)
-	}
+func modelImports(w writer.GenWriter, ms Models) {
+	imports := &Imports{}
+	imports.add("package:dart_model/dart_model.dart")
+	w.Put(imports.String())
 }
 
 func modelClass(w writer.GenWriter, m Model) {

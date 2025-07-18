@@ -15,16 +15,16 @@ var Command = cli.Command{
 	Name: "dart",
 	Options: cli.Options{
 		&cli.Option{
-			Name:        "mp",
-			Description: "Generate msgpack message codecs",
+			Name:        "msgpack",
 			Short:       "m",
+			Description: "Generate codecs for msgpack",
 			Binding:     cli.BoolFlag().Bind(&opts.Msgpack),
 		},
 		&cli.Option{
-			Name:        "output",
-			Description: "Output path for code",
-			Short:       "o",
-			Binding:     cli.StringSlice().Bind(&outputs),
+			Name:        "path",
+			Short:       "p",
+			Description: "Output path",
+			Binding:     cli.String().Bind(&opts.Path),
 		},
 	},
 	Params: cli.Params{
@@ -38,11 +38,16 @@ var Command = cli.Command{
 }
 
 func run(cmd *cli.Command, args []string) {
-	models, err := load.Models(sources)
+	ds, err := load.Models(sources)
 	if err != nil {
 		cmd.Fatal(1, "%v", err)
 	}
-	for _, output := range outputs {
-		gen(output, models, opts)
+	ms := newModels(ds)
+
+	if err := genModels(opts, ms); err != nil {
+		cmd.Fatal(1, "%v", err)
+	}
+	if err := genMsgpack(opts, ms); err != nil {
+		cmd.Fatal(1, "%v", err)
 	}
 }

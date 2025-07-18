@@ -4,10 +4,19 @@ import (
 	"fmt"
 
 	"github.com/ab36245/go-modelgen/defs"
+	"github.com/ab36245/go-strcase"
 )
 
-func newModels(ds []defs.Model) []Model {
-	return newMap(ds, newModel)
+func newModels(ds []defs.Model) Models {
+	return Models{
+		List:  newMap(ds, newModel),
+		Types: defs.GetTypes(ds),
+	}
+}
+
+type Models struct {
+	List  []Model
+	Types defs.Types
 }
 
 func newModel(d defs.Model) Model {
@@ -15,6 +24,7 @@ func newModel(d defs.Model) Model {
 		Fields: newMap(d.Fields, newField),
 		Id:     d.Id,
 		Name:   d.Name,
+		Lower:  strcase.ToCamel(d.Name),
 	}
 }
 
@@ -22,6 +32,7 @@ type Model struct {
 	Fields []Field
 	Id     int
 	Name   string
+	Lower  string
 }
 
 func newField(d defs.Field) Field {

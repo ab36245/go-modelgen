@@ -5,88 +5,46 @@ import (
 
 	"github.com/ab36245/go-modelgen/defs"
 	"github.com/ab36245/go-modelgen/writer"
+	"github.com/ab36245/go-strcase"
 )
 
 const msgpackExtType = 0
 
-func genMsgpack(dir string, ms []Model, opts Opts) error {
+func genMsgpack(opts Opts, ms Models) error {
 	w := writer.WithPrefix("  ")
+	msgpackFile(w, ms)
+	return genSave(opts, "msgpack.dart", w.Code())
+}
+
+func msgpackFile(w writer.GenWriter, ms Models) {
 	w.Put("// WARNING!")
 	w.Put("// This code was generated automatically.")
 	msgpackImports(w, ms)
-	w.Put("")
-	msgpackDecodeFunc(w, ms)
-	w.Put("")
-	msgpackEncodeFunc(w, ms)
-	for _, m := range ms {
+	for _, m := range ms.List {
 		w.Put("")
-		msgpackDecodeModel(w, m)
-		w.Put("")
-		msgpackEncodeModel(w, m)
+		msgpackCodec(w, m)
 	}
 	w.Put("")
-	return genSave(dir, "msgpack.dart", opts, w.Code())
 }
 
-func msgpackImports(w writer.GenWriter, ms []Model) {
-	names := map[string]bool{
-		"package:dart_msgpack/dart_msgpack.dart": true,
-		"models.dart":                            true,
-	}
-	types := genTypes(ms)
-	_ = types
-	// if types[defs.OptionType] || types[defs.RefType] {
-	// 	names["github.com/ab36245/go-model"] = true
-	// }
-	for name := range names {
-		w.Put("import '%s';", name)
-	}
+func msgpackImports(w writer.GenWriter, ms Models) {
+	imports := &Imports{}
+	imports.add("package:dart_msgpack/dart_msgpack.dart")
+	imports.add("models.dart")
+	w.Put(imports.String())
 }
 
-func msgpackDecodeFunc(w writer.GenWriter, ms []Model) {
-	w.Inc("dynamic decodeMsgpack(MsgPackDecoder mpd) {")
+func msgpackCodec(w writer.GenWriter, m Model) {
+	w.Inc("final %sMsgpackCodec = MsgPackCodec<%s>(", m.Lower, m.Name)
 	{
-		w.Put("final (typ, id) = mpd.getExtUint();")
-		w.Inc("if (typ != %d) {", msgpackExtType)
-		{
-			w.Put("throw Exception('unexpected extension type $typ');")
-		}
-		w.Dec("}")
-		w.Inc("return switch (id) {")
-		{
-			for _, m := range ms {
-				w.Put("%d => _decode%sMsgpack(mpd),", m.Id, m.Name)
-			}
-			w.Put("_ => throw Exception('unknown model id $id'),")
-		}
-		w.Dec("};")
+		msgpackDecode(w, m)
+		msgpackEncode(w, m)
 	}
-	w.Dec("}")
+	w.Dec(");")
 }
 
-func msgpackEncodeFunc(w writer.GenWriter, ms []Model) {
-	w.Inc("void encodeMsgpack(MsgPackEncoder mpe, dynamic v) {")
-	{
-		w.Inc("switch (v) {")
-		for _, m := range ms {
-			w.Inc("case %s():", m.Name)
-			{
-				w.Put("_encode%sMsgpack(mpe, v);", m.Name)
-			}
-			w.Dec("")
-		}
-		w.Inc("default:")
-		{
-			w.Put("throw Exception('unknown model ${v.runtimeType}');")
-		}
-		w.Dec("")
-		w.Dec("}")
-	}
-	w.Dec("}")
-}
-
-func msgpackDecodeModel(w writer.GenWriter, m Model) {
-	w.Inc("%s _decode%sMsgpack(MsgPackDecoder mpd) {", m.Name, m.Name)
+func msgpackDecode(w writer.GenWriter, m Model) {
+	w.Inc("decode: (mpd) {")
 	{
 		for i, f := range m.Fields {
 			if i > 0 {
@@ -104,7 +62,7 @@ func msgpackDecodeModel(w writer.GenWriter, m Model) {
 		}
 		w.Dec(");")
 	}
-	w.Dec("}")
+	w.Dec("},")
 }
 
 func msgpackDecodeField(w writer.GenWriter, f Field) {
@@ -170,7 +128,7 @@ func msgpackDecodeType(w writer.GenWriter, t *Type, target string) string {
 		w.Dec("}")
 
 	case defs.ModelType:
-		w.Put("final %s = _decode%sMsgpack(mpd);", v, t.Name)
+		w.Put("final %s = %sMsgpackCodec.decode(mpd);", v, strcase.ToCamel(t.Name))
 
 	case defs.RefType:
 		doGet(d, "String")
@@ -200,8 +158,8 @@ func msgpackDecodeType(w writer.GenWriter, t *Type, target string) string {
 	return v
 }
 
-func msgpackEncodeModel(w writer.GenWriter, m Model) {
-	w.Inc("void _encode%sMsgpack(MsgPackEncoder mpe, %s m) {", m.Name, m.Name)
+func msgpackEncode(w writer.GenWriter, m Model) {
+	w.Inc("encode: (mpe, m) {")
 	{
 		w.Put("mpe.putExtUint(%d, %d);", msgpackExtType, m.Id)
 		for _, f := range m.Fields {
@@ -210,7 +168,7 @@ func msgpackEncodeModel(w writer.GenWriter, m Model) {
 			msgpackEncodeField(w, f)
 		}
 	}
-	w.Dec("}")
+	w.Dec("},")
 }
 
 func msgpackEncodeField(w writer.GenWriter, f Field) {
@@ -258,7 +216,7 @@ func msgpackEncodeType(w writer.GenWriter, t *Type, source string) {
 		w.Dec("}")
 
 	case defs.ModelType:
-		w.Put("_encode%sMsgpack(mpe, %s);", t.Name, source)
+		w.Put("%sMsgpackCodec.encode(mpe, %s);", strcase.ToCamel(t.Name), source)
 
 	case defs.OptionType:
 		w.Inc("if (%s != null) {", source)

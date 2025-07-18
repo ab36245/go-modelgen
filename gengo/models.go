@@ -1,17 +1,16 @@
 package gengo
 
 import (
-	"github.com/ab36245/go-modelgen/defs"
 	"github.com/ab36245/go-modelgen/writer"
 )
 
-func genModels(opts Opts, ms []Model) error {
+func genModels(opts Opts, ms Models) error {
 	w := writer.WithPrefix("\t")
 	modelFile(w, ms)
 	return genSave(opts, "models.go", w.Code())
 }
 
-func modelFile(w writer.GenWriter, ms []Model) {
+func modelFile(w writer.GenWriter, ms Models) {
 	w.Put("// WARNING!")
 	w.Put("// This code was generated automatically.")
 	w.Put("package models")
@@ -20,7 +19,7 @@ func modelFile(w writer.GenWriter, ms []Model) {
 	w.Put("")
 	w.Put("// For convenience")
 	w.Put("type Ref = model.Ref")
-	for _, m := range ms {
+	for _, m := range ms.List {
 		w.Put("")
 		modelStruct(w, m)
 		w.Put("")
@@ -28,23 +27,13 @@ func modelFile(w writer.GenWriter, ms []Model) {
 	}
 }
 
-func modelImports(w writer.GenWriter, ms []Model) {
-	names := map[string]bool{
-		"github.com/ab36245/go-model": true,
+func modelImports(w writer.GenWriter, ms Models) {
+	imports := &Imports{}
+	imports.add("github.com/ab36245/go-model")
+	if ms.Types.HasTime() {
+		imports.add("time")
 	}
-	types := genTypes(ms)
-	if _, ok := types[defs.TimeType]; ok {
-		names["time"] = true
-	}
-	if len(names) > 0 {
-		w.Inc("import (")
-		{
-			for name := range names {
-				w.Put("%q", name)
-			}
-		}
-		w.Dec(")")
-	}
+	w.Put(imports.String())
 }
 
 func modelStruct(w writer.GenWriter, m Model) {

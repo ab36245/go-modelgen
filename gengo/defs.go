@@ -8,8 +8,16 @@ import (
 	"github.com/ab36245/go-modelgen/defs"
 )
 
-func newModels(ds []defs.Model) []Model {
-	return newMap(ds, newModel)
+func newModels(ds []defs.Model) Models {
+	return Models{
+		List:  newMap(ds, newModel),
+		Types: defs.GetTypes(ds),
+	}
+}
+
+type Models struct {
+	List  []Model
+	Types defs.Types
 }
 
 func newModel(d defs.Model) Model {
